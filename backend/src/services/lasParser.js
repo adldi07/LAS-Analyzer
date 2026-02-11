@@ -104,7 +104,8 @@ class LASParser {
         const curves = [];
 
         for (const line of lines) {
-            const match = line.match(/^(\w+)\s*\.([^:]*):(.*)$/);
+            // const match = line.match(/^(\w+)\s*\.([^:]*):(.*)$/);
+            const match = line.match(/^([^.\s]+)\s*\.\s*([^:]*):(.*)$/);
             if (match) {
                 const [, mnemonic, unit, description] = match;
                 curves.push({
@@ -127,7 +128,7 @@ class LASParser {
             const values = line.trim().split(/\s+/);
 
             if (values.length !== curveCount) {
-                console.warn(`Skipping malformed data line: ${line}`);
+                console.warn(`Skipping malformed data line:---- ${values.length} ---- ${curveCount}`);
                 continue;
             }
 
