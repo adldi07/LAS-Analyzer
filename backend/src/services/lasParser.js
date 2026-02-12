@@ -1,5 +1,3 @@
-// src/services/lasParser.js
-
 class LASParser {
     constructor() {
         this.NULL_VALUE = -999.25; // Common null value in LAS files
@@ -10,6 +8,7 @@ class LASParser {
      * @param {string} content - Raw LAS file content
      * @returns {Object} Parsed LAS data
      */
+
     parse(content) {
         const lines = content.split('\n');
 
