@@ -75,7 +75,7 @@ class WellService {
                 const depth = dataPoint[depthMnemonic];
 
                 for (const curve of parsedData.curves) {
-                    if (curve.mnemonic === depthMnemonic) continue;
+                    if (curve.mnemonic === depthMnemonic) continue;  // Skip depth itself
 
                     const value = dataPoint[curve.mnemonic];
                     const curveId = curveIds[curve.mnemonic];
@@ -110,14 +110,36 @@ class WellService {
 
                 await client.query(
                     `INSERT INTO measurements (curve_id, depth, value)
-         VALUES ${values.join(', ')}`,
+                    VALUES ${values.join(', ')}`,
                     insertValues
                 );
 
                 console.log(`Inserted batch ${Math.floor(i / (BATCH_SIZE / 3)) + 1}`);
             }
 
-            // ... (rest of the code - update statistics, commit)
+            console.log('Inserted measurements');   
+            console.log('Updating curve statistics...');
+            // 6. Update curve statistics
+            for (const [mnemonic, curveId] of Object.entries(curveIds)) {
+                if (mnemonic === depthMnemonic) continue;
+
+                await client.query(
+                    `UPDATE curves
+                        SET min_value = (SELECT MIN(value) FROM measurements WHERE curve_id = $1),
+                        max_value = (SELECT MAX(value) FROM measurements WHERE curve_id = $1),
+                        mean_value = (SELECT AVG(value) FROM measurements WHERE curve_id = $1)
+                        WHERE id = $1`,
+                    [curveId]
+                );
+            }
+
+            await client.query('COMMIT');
+
+            return {
+                well: wellResult.rows[0],
+                curves: parsedData.curves,
+                measurementCount: parsedData.data.length * (parsedData.curves.length - 1),
+            };
 
         } catch (error) {
             await client.query('ROLLBACK');
@@ -126,6 +148,7 @@ class WellService {
             client.release();
         }
     }
+
 
     /**
      * Get well with curves
@@ -143,9 +166,9 @@ class WellService {
         const curvesResult = await pool.query(
             `SELECT id, mnemonic, curve_name, unit, description, 
               min_value, max_value, mean_value
-       FROM curves
-       WHERE well_id = $1
-       ORDER BY mnemonic`,
+            FROM curves
+            WHERE well_id = $1
+            ORDER BY mnemonic`,
             [wellId]
         );
 
@@ -162,7 +185,7 @@ class WellService {
         // Get curve IDs
         const curveResult = await pool.query(
             `SELECT id, mnemonic FROM curves
-       WHERE well_id = $1 AND mnemonic = ANY($2)`,
+            WHERE well_id = $1 AND mnemonic = ANY($2)`,
             [wellId, curveMnemonics]
         );
 
@@ -178,11 +201,11 @@ class WellService {
         // Get measurements
         const measurementResult = await pool.query(
             `SELECT curve_id, depth, value
-       FROM measurements
-       WHERE curve_id = ANY($1)
-         AND depth BETWEEN $2 AND $3
-         AND value IS NOT NULL
-       ORDER BY depth`,
+            FROM measurements
+            WHERE curve_id = ANY($1)
+            AND depth BETWEEN $2 AND $3
+            AND value IS NOT NULL
+            ORDER BY depth`,
             [Object.keys(curveMap), depthStart, depthStop]
         );
 
