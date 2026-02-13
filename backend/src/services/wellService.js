@@ -245,7 +245,7 @@ class WellService {
             `SELECT curve_id, depth, value
             FROM measurements
             WHERE curve_id = ANY($1)
-            AND depth BETWEEN $2 AN D $3
+            AND depth BETWEEN $2 AND $3
             AND value IS NOT NULL
             ORDER BY depth`,
             [Object.keys(curveMap), depthStart, depthStop]
