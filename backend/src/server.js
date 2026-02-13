@@ -24,10 +24,12 @@ app.use((req, res, next) => {
 
 // Routes
 const wellsRouter = require('./routes/wells');
-const dataRouter = require('./routes/data');  // ADD THIS
+const dataRouter = require('./routes/data');
+const interpretRouter = require('./routes/interpret'); // ADD THIS
 
 app.use('/api/wells', wellsRouter);
-app.use('/api/wells', dataRouter);  // ADD THIS
+app.use('/api/wells', dataRouter);
+app.use('/api/wells', interpretRouter); // ADD THIS
 
 // Health check
 app.get('/health', (req, res) => {
