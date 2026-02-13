@@ -64,7 +64,6 @@ backend/
 2.  Install dependencies:
     ```bash
     npm install
-    npm install @anthropic-ai/sdk  # Ensure AI SDK is installed
     ```
 
 ### 3. Database Setup
