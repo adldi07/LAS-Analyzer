@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: las-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: las_analyzer
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/models/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+volumes:
+  postgres_data:
