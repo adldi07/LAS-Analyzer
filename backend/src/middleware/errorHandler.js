@@ -1,5 +1,3 @@
-// backend/src/middleware/errorHandler.js
-
 /**
  * Custom error class for application errors
  */
