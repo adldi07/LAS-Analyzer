@@ -1,4 +1,3 @@
-// backend/tests/lasParser.test.js
 const lasParser = require('../src/services/lasParser');
 const fs = require('fs');
 const path = require('path');
