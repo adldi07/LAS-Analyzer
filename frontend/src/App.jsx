@@ -6,6 +6,7 @@ import CurveSelector from './components/CurveSelector';
 import DepthRangeSelector from './components/DepthRangeSelector';
 import WellChart from './components/WellChart';
 import AIInterpretation from './components/AIInterpretation';
+import FloatingChatbot from './components/FloatingChatbot';
 import useWellStore from './store/wellStore';
 import { wellApi } from './services/api';
 
@@ -199,6 +200,9 @@ function App() {
           </div>
         )}
       </main>
+
+      {/* Floating Chatbot - Always available when well is loaded */}
+      <FloatingChatbot />
     </div>
   );
 }
