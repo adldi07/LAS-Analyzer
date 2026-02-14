@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Brain, TrendingUp, AlertTriangle, Link2, Loader2 } from 'lucide-react';
 import { wellApi } from '../services/api';
 import FluidIndicatorsCard from './FluidIndicatorsCard';
@@ -90,10 +91,22 @@ const AIInterpretation = ({ wellId, curves, depthRange, data, onInterpretationCo
           <h3 className="text-xl font-semibold">AI Interpretation</h3>
         </div>
 
-        <div className="prose max-w-none">
-          <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+        <div className="prose max-w-none text-gray-700 leading-relaxed">
+          <ReactMarkdown
+            components={{
+              h1: ({ node, ...props }) => <h1 className="text-2xl font-bold text-gray-900 mt-6 mb-4 pb-2 border-b border-gray-200" {...props} />,
+              h2: ({ node, ...props }) => <h2 className="text-xl font-semibold text-primary-800 mt-6 mb-3 flex items-center" {...props} />,
+              h3: ({ node, ...props }) => <h3 className="text-lg font-medium text-gray-800 mt-4 mb-2" {...props} />,
+              p: ({ node, ...props }) => <p className="mb-4 text-gray-700 leading-relaxed" {...props} />,
+              ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+              ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+              li: ({ node, ...props }) => <li className="text-gray-700" {...props} />,
+              strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
+              blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary-200 pl-4 italic text-gray-600 my-4" {...props} />,
+            }}
+          >
             {interpretation.interpretation}
-          </div>
+          </ReactMarkdown>
         </div>
 
         <div className="mt-4 pt-4 border-t text-sm text-gray-500">
