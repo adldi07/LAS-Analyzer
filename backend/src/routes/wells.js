@@ -34,7 +34,7 @@ router.post('/', upload.single('file'), asyncHandler(async (req, res) => {
   }
 
   const wellId = uuidv4();
-  
+
   const result = await wellService.processLASFile(req.file, wellId);
 
   res.status(201).json({
@@ -55,6 +55,18 @@ router.post('/', upload.single('file'), asyncHandler(async (req, res) => {
       },
       measurementCount: result.measurementCount,
     },
+  });
+}));
+
+/**
+ * GET /api/wells
+ * List all wells
+ */
+router.get('/', asyncHandler(async (req, res) => {
+  const wells = await wellService.getAllWells();
+  res.json({
+    success: true,
+    data: wells,
   });
 }));
 
@@ -83,8 +95,8 @@ router.get('/:wellId/data', asyncHandler(async (req, res) => {
   if (!curves || !depthStart || !depthStop) {
     return res.status(400).json({
       success: false,
-      error: { 
-        message: 'Missing required parameters: curves, depthStart, depthStop' 
+      error: {
+        message: 'Missing required parameters: curves, depthStart, depthStop'
       },
     });
   }

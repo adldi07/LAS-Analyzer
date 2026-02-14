@@ -192,6 +192,15 @@ class WellService {
     }
 
 
+    async getAllWells() {
+        const result = await pool.query(
+            `SELECT id, well_name, field_name, filename, s3_key, start_depth, stop_depth, depth_unit, uploaded_at 
+             FROM wells 
+             ORDER BY uploaded_at DESC`
+        );
+        return result.rows;
+    }
+
     /**
      * Get well with curves
      */
