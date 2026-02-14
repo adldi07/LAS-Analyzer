@@ -483,16 +483,39 @@ class AIService {
     );
 
     try {
-      const message = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{
-          role: 'user',
-          content: prompt,
-        }],
-      });
+      // --- MOCK MODE ENABLED (Save Costs) ---
+      console.log('⚠️ MOCK MODE: Returning canned interpretation to save API costs');
+      const interpretation = `
+# 🧪 MOCK INTERPRETATION (Cost-Saving Mode)
 
-      const interpretation = message.content[0].text;
+**Note:** This is a generated response for testing purposes. The statistics, zones, and fluid indicators shown above are REAL calculations from your data, but this text analysis is a placeholder.
+
+## 1. Overall Assessment
+The analyzed interval (${depthRange.start}-${depthRange.stop} ft) represents a significant sequence of interest. The system has successfully segmented the log into distinct lithological zones, suggesting a changing depositional environment.
+
+## 2. Hydrocarbon Potential
+${fluidIndicators && fluidIndicators.hasGasData ? `**POSITIVE INDICATIONS:** The automated analysis has detected ${fluidIndicators.summary.totalGasShows} potential gas shows. The calculated C1/C2 ratios suggest a ${fluidIndicators.gasComposition?.[0]?.interpretation || 'productive'} gas system.` : 'No distinct hydrocarbon indicators were found in this specific interval.'}
+
+## 3. Data Quality
+The automated quality control checks have identified ${qualityIssues && qualityIssues.summary ? qualityIssues.summary.totalIssues : 0} issues. ${(qualityIssues && qualityIssues.summary && qualityIssues.summary.totalIssues > 0) ? 'Please review the warnings card above for specific tool sticking or calibration issues.' : 'The data quality appears excellent.'}
+
+## 4. Lithology & Zonation
+The interval has been divided into ${zones ? zones.length : 0} zones:
+${zones && zones.length > 0 ? `- **Zone 1:** Shows characteristics of ${zones[0].characterization}.` : ''}
+${zones && zones.length > 1 ? `- **Zone 2:** Transitions into a ${zones[1].characterization}.` : ''}
+
+*To enable real AI analysis, uncomment the API call in backend/src/services/aiService.js*
+      `;
+
+      // const message = await anthropic.messages.create({
+      //   model: 'claude-sonnet-4-20250514',
+      //   max_tokens: 2000,
+      //   messages: [{
+      //     role: 'user',
+      //     content: prompt,
+      //   }],
+      // });
+      // const interpretation = message.content[0].text;
 
       return {
         interpretation,
