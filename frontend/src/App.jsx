@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useState } from 'react';
 import FileUpload from './components/FileUpload';
+import WellList from './components/WellList';
 import CurveSelector from './components/CurveSelector';
 import DepthRangeSelector from './components/DepthRangeSelector';
 import WellChart from './components/WellChart';
@@ -77,16 +78,38 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {!wellId ? (
-          /* Step 1: File Upload */
-          <FileUpload onUploadComplete={() => { }} />
+          <div className="grid md:grid-cols-2 gap-8 items-start">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-800">Upload New .LAS File</h2>
+              <FileUpload onUploadComplete={() => { }} />
+            </div>
+            <div className="space-y-4">
+              <WellList />
+            </div>
+          </div>
         ) : (
           <div className="space-y-6">
             {/* Well Information */}
             <div className="card">
-              <h2 className="text-xl font-semibold mb-2">
-                Well: {wellData?.well_name || 'Unknown'}
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Well: {wellData?.well_name || 'Unknown'}
+                  </h2>
+                  {wellData?.field_name && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Field: {wellData.field_name}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => useWellStore.getState().reset()}
+                  className="px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-md transition-colors border border-primary-200"
+                >
+                  Switch Well
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm pt-4 border-t border-gray-100">
                 <div>
                   <p className="text-gray-600">Field</p>
                   <p className="font-medium">{wellData?.field_name || 'N/A'}</p>

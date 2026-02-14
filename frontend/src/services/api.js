@@ -45,6 +45,12 @@ export const wellApi = {
     return response.data;
   },
 
+  // Get all wells
+  getWells: async () => {
+    const response = await api.get('/wells');
+    return response.data;
+  },
+
   // Get measurement data
   getMeasurements: async (wellId, curves, depthStart, depthStop) => {
     const response = await api.get(`/wells/${wellId}/data`, {
