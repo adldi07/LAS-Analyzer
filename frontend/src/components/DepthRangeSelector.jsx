@@ -18,14 +18,6 @@ const DepthRangeSelector = ({
     }
   }, [currentRange]);
 
-  const handleApply = () => {
-    if (startDepth >= stopDepth) {
-      alert('Start depth must be less than stop depth');
-      return;
-    }
-    onRangeChange({ start: startDepth, stop: stopDepth });
-  };
-
   const handleReset = () => {
     setStartDepth(minDepth);
     setStopDepth(maxDepth);
@@ -55,6 +47,7 @@ const DepthRangeSelector = ({
             onValueChange={([start, stop]) => {
               setStartDepth(start);
               setStopDepth(stop);
+              onRangeChange({ start, stop });
             }}
           >
             <Slider.Track className="bg-slate-100 relative grow rounded-full h-1.5">
@@ -85,7 +78,11 @@ const DepthRangeSelector = ({
               <input
                 type="number"
                 value={startDepth}
-                onChange={(e) => setStartDepth(parseFloat(e.target.value) || minDepth)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || minDepth;
+                  setStartDepth(val);
+                  onRangeChange({ start: val, stop: stopDepth });
+                }}
                 min={minDepth}
                 max={stopDepth}
                 className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all shadow-inner"
@@ -103,7 +100,11 @@ const DepthRangeSelector = ({
               <input
                 type="number"
                 value={stopDepth}
-                onChange={(e) => setStopDepth(parseFloat(e.target.value) || maxDepth)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || maxDepth;
+                  setStopDepth(val);
+                  onRangeChange({ start: startDepth, stop: val });
+                }}
                 min={startDepth}
                 max={maxDepth}
                 className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-lg font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all shadow-inner"
@@ -124,19 +125,14 @@ const DepthRangeSelector = ({
         </div>
       </div>
 
-      <div className="mt-8 flex gap-3">
-        <button
-          onClick={handleApply}
-          className="flex-[3] py-4 bg-gradient-to-br from-primary-600 to-indigo-700 text-white font-black text-sm uppercase tracking-widest rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-1 active:translate-y-0 transition-all border-b-4 border-indigo-800"
-        >
-          Apply Changes
-        </button>
+      <div className="mt-8">
         <button
           onClick={handleReset}
-          className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center border border-slate-200"
+          className="w-full py-4 bg-slate-100 text-slate-600 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center border border-slate-200 gap-2"
           title="Reset to full well range"
         >
-          <RefreshCcw className="w-5 h-5" />
+          <RefreshCcw className="w-4 h-4" />
+          Reset Range
         </button>
       </div>
     </div>
