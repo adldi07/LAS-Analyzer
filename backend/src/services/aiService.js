@@ -1,10 +1,86 @@
 const Anthropic = require('@anthropic-ai/sdk');
+const pool = require('../config/database');
 
 const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
 });
 
 class AIService {
+  /**
+   * Generate system prompt with well context for chatbot
+   */
+  async generateSystemPrompt(wellId) {
+    try {
+      // Query well metadata
+      const wellResult = await pool.query(
+        `SELECT id, well_name, field_name, company, 
+                start_depth, stop_depth, step, depth_unit, 
+                header_info, uploaded_at
+         FROM wells 
+         WHERE id = $1`,
+        [wellId]
+      );
+
+      if (wellResult.rows.length === 0) {
+        throw new Error('Well not found');
+      }
+
+      const well = wellResult.rows[0];
+
+      // Query curve statistics
+      const curvesResult = await pool.query(
+        `SELECT mnemonic, curve_name, unit, description,
+                min_value, max_value, mean_value
+         FROM curves 
+         WHERE well_id = $1
+         ORDER BY mnemonic`,
+        [wellId]
+      );
+
+      const curves = curvesResult.rows;
+
+      // Build comprehensive system prompt
+      const systemPrompt = `You are an expert petrophysicist and well log analyst assistant. You are analyzing well log data for the following well:
+
+**Well Information:**
+- Well Name: ${well.well_name || 'Unknown'}
+- Field: ${well.field_name || 'Not specified'}
+- Company: ${well.company || 'Not specified'}
+- Depth Range: ${well.start_depth} to ${well.stop_depth} ${well.depth_unit}
+- Step: ${well.step} ${well.depth_unit}
+- Upload Date: ${new Date(well.uploaded_at).toLocaleDateString()}
+
+**Available Curves and Statistics:**
+${curves.map(curve => `
+- **${curve.mnemonic}** (${curve.curve_name || 'N/A'})
+  - Unit: ${curve.unit || 'N/A'}
+  - Description: ${curve.description || 'N/A'}
+  - Range: ${curve.min_value?.toFixed(2) || 'N/A'} to ${curve.max_value?.toFixed(2) || 'N/A'}
+  - Average: ${curve.mean_value?.toFixed(2) || 'N/A'}
+`).join('')}
+
+**Your Role:**
+- Answer questions about this specific well's data
+- Provide petrophysical interpretations based on the curve values
+- Explain log responses and what they indicate about the formation
+- Help identify zones of interest (e.g., pay zones, shale, sandstone)
+- Be concise but informative
+- If asked about data not available in the curves above, politely state that information is not available
+
+**Guidelines:**
+- Always reference specific curve values when making interpretations
+- Use standard petrophysical terminology
+- Be precise with numbers and units
+- If uncertain, acknowledge limitations rather than speculate
+- Suggest relevant follow-up analyses when appropriate`;
+
+      return systemPrompt;
+    } catch (error) {
+      console.error('Error generating system prompt:', error);
+      throw new Error('Failed to generate chat context');
+    }
+  }
+
   /**
    * Calculate statistics for the data
    */
@@ -636,34 +712,30 @@ Be specific, reference actual depth values and measurements, and use professiona
 
   /**
    * Chat with well data context
+   * @param {Array} conversationHistory - Full conversation including system prompt
    */
-  async chatWithWellData(wellInfo, conversation, wellContext) {
-    const systemPrompt = `You are a geoscience AI assistant helping analyze well-log data for ${wellInfo.well_name || 'a well'}. 
-
-WELL CONTEXT:
-${JSON.stringify(wellContext, null, 2)}
-
-Answer questions about this well data conversationally, referencing specific measurements and depths when relevant. Be helpful and educational.`;
-
+  async chatWithWellData(conversationHistory) {
     try {
-      const messages = [
-        {
-          role: 'user',
-          content: systemPrompt,
-        },
-        ...conversation,
-      ];
+      // Separate system message from conversation
+      const systemMessage = conversationHistory.find(msg => msg.role === 'system');
+      const userMessages = conversationHistory.filter(msg => msg.role !== 'system');
 
-      const message = await anthropic.messages.create({
+      if (!systemMessage) {
+        throw new Error('System prompt is required for chat');
+      }
+
+      // Claude API format: system goes in system parameter, not in messages
+      const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: messages,
+        max_tokens: 2000,
+        system: systemMessage.content,
+        messages: userMessages,
       });
 
-      return message.content[0].text;
+      return response.content[0].text;
     } catch (error) {
       console.error('Claude chat error:', error);
-      throw new Error('Chat failed');
+      throw new Error('Chat failed: ' + (error.message || 'Unknown error'));
     }
   }
 }

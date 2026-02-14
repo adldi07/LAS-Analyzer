@@ -86,7 +86,7 @@ router.post('/:wellId/interpret', async (req, res, next) => {
 
 /**
  * POST /api/wells/:wellId/chat
- * Chatbot interaction
+ * Chatbot interaction with context-aware responses
  */
 router.post('/:wellId/chat', async (req, res, next) => {
   try {
@@ -100,37 +100,29 @@ router.post('/:wellId/chat', async (req, res, next) => {
       });
     }
 
-    // Get well info and curves
-    const well = await wellService.getWell(wellId);
+    // Check if this is the first message (no system prompt in history)
+    let conversationHistory = [...history];
+    const hasSystemPrompt = history.some(msg => msg.role === 'system');
 
-    // Build context
-    const wellContext = {
-      well_name: well.well_name,
-      field: well.field_name,
-      depth_range: `${well.start_depth} - ${well.stop_depth} ft`,
-      curves: well.curves.map(c => c.mnemonic).join(', '),
-    };
+    if (!hasSystemPrompt) {
+      // Generate system prompt for first message
+      const systemPrompt = await aiService.generateSystemPrompt(wellId);
+      conversationHistory.unshift({
+        role: 'system',
+        content: systemPrompt,
+      });
+    }
 
-    // Format conversation
-    const conversation = [
-      ...history.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      })),
-      {
-        role: 'user',
-        content: message,
-      },
-    ];
+    // Add user message
+    conversationHistory.push({
+      role: 'user',
+      content: message,
+    });
 
     // Get AI response
-    const response = await aiService.chatWithWellData(
-      well,
-      conversation,
-      wellContext
-    );
+    const response = await aiService.chatWithWellData(conversationHistory);
 
-    // Store in database
+    // Store messages in database
     await pool.query(
       `INSERT INTO chat_messages (well_id, role, content) VALUES ($1, $2, $3)`,
       [wellId, 'user', message]
@@ -145,6 +137,7 @@ router.post('/:wellId/chat', async (req, res, next) => {
       success: true,
       data: {
         response,
+        systemPrompt: !hasSystemPrompt ? conversationHistory[0].content : null, // Return system prompt on first message
         timestamp: new Date().toISOString(),
       },
     });
