@@ -104,7 +104,7 @@ const FileUpload = ({ onUploadComplete }) => {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto my-12">
+    <div className="w-full max-w-3xl mx-auto">
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden transition-all duration-300 hover:shadow-2xl">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white relative overflow-hidden">

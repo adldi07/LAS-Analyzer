@@ -78,12 +78,11 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {!wellId ? (
-          <div className="grid md:grid-cols-2 gap-8 items-start">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800">Upload New .LAS File</h2>
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
+            <div className="md:col-span-7 h-full">
               <FileUpload onUploadComplete={() => { }} />
             </div>
-            <div className="space-y-4">
+            <div className="md:col-span-3 h-full flex flex-col">
               <WellList />
             </div>
           </div>
