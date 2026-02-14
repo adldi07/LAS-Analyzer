@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Brain, TrendingUp, AlertTriangle, Link2, Loader2 } from 'lucide-react';
 import { wellApi } from '../services/api';
+import FluidIndicatorsCard from './FluidIndicatorsCard';
+import QualityWarnings from './QualityWarnings';
+import ZoneSummary from './ZoneSummary';
 
-const AIInterpretation = ({ wellId, curves, depthRange, data }) => {
+const AIInterpretation = ({ wellId, curves, depthRange, data, onInterpretationComplete }) => {
   const [interpretation, setInterpretation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -25,6 +28,9 @@ const AIInterpretation = ({ wellId, curves, depthRange, data }) => {
 
       if (response.success) {
         setInterpretation(response.data);
+        if (onInterpretationComplete) {
+          onInterpretationComplete(response.data);
+        }
       }
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to generate interpretation');
@@ -62,13 +68,28 @@ const AIInterpretation = ({ wellId, curves, depthRange, data }) => {
 
   return (
     <div className="space-y-6">
+      {/* NEW: Fluid Indicators - Show first for maximum impact! */}
+      {interpretation.fluidIndicators && (
+        <FluidIndicatorsCard fluidIndicators={interpretation.fluidIndicators} />
+      )}
+
+      {/* NEW: Quality Warnings */}
+      {interpretation.qualityIssues && (
+        <QualityWarnings qualityIssues={interpretation.qualityIssues} />
+      )}
+
+      {/* NEW: Zone Segmentation */}
+      {interpretation.zones && (
+        <ZoneSummary zones={interpretation.zones} />
+      )}
+
       {/* Main Interpretation */}
       <div className="card">
         <div className="flex items-center mb-4">
           <Brain className="w-6 h-6 text-primary-600 mr-2" />
           <h3 className="text-xl font-semibold">AI Interpretation</h3>
         </div>
-        
+
         <div className="prose max-w-none">
           <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
             {interpretation.interpretation}
@@ -91,7 +112,7 @@ const AIInterpretation = ({ wellId, curves, depthRange, data }) => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(interpretation.statistics || {}).map(([curve, stats]) => {
             if (!stats) return null;
-            
+
             return (
               <div key={curve} className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-primary-700 mb-2">{curve}</h4>
@@ -172,9 +193,8 @@ const AIInterpretation = ({ wellId, curves, depthRange, data }) => {
                 <div className="flex items-center">
                   <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
                     <div
-                      className={`h-2 rounded-full ${
-                        corr.correlation > 0 ? 'bg-green-500' : 'bg-red-500'
-                      }`}
+                      className={`h-2 rounded-full ${corr.correlation > 0 ? 'bg-green-500' : 'bg-red-500'
+                        }`}
                       style={{ width: `${Math.abs(corr.correlation) * 100}%` }}
                     />
                   </div>

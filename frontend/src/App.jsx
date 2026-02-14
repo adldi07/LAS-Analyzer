@@ -23,6 +23,7 @@ function App() {
   } = useWellStore();
 
   const [showInterpretation, setShowInterpretation] = useState(false);
+  const [interpretationResults, setInterpretationResults] = useState(null);
 
   const handleCurveToggle = (curveMnemonic) => {
     setSelectedCurves(
@@ -39,6 +40,8 @@ function App() {
     }
 
     setLoadingData(true);
+    setShowInterpretation(false);
+    setInterpretationResults(null);
     try {
       const response = await wellApi.getMeasurements(
         wellId,
@@ -75,7 +78,7 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {!wellId ? (
           /* Step 1: File Upload */
-          <FileUpload onUploadComplete={() => {}} />
+          <FileUpload onUploadComplete={() => { }} />
         ) : (
           <div className="space-y-6">
             {/* Well Information */}
@@ -145,6 +148,8 @@ function App() {
                   data={measurementData}
                   curves={selectedCurves}
                   depthRange={depthRange}
+                  zones={interpretationResults?.zones}
+                  fluidIndicators={interpretationResults?.fluidIndicators}
                 />
 
                 {/* AI Interpretation Button */}
@@ -164,6 +169,7 @@ function App() {
                     curves={selectedCurves}
                     depthRange={depthRange}
                     data={measurementData}
+                    onInterpretationComplete={setInterpretationResults}
                   />
                 )}
               </>
