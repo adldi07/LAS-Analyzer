@@ -10,109 +10,98 @@
 
 ---
 
-## � Live ecosystem
-*   **🌐 Production App**: [las-analyzer.vercel.app](https://las-analyzer.vercel.app)
-*   **📡 System API**: [http://13.201.9.95/api](http://13.201.9.95/api)
-*   **🩺 Health Status**: [http://13.201.9.95/health](http://13.201.9.95/health)
+## 🌎 Live Environment
+*   **🚀 Production App**: [las-analyzer.vercel.app](https://las-analyzer.vercel.app)
+*   **🔌 System API**: [http://13.201.9.95/api](http://13.201.9.95/api)
+*   **💓 Health Status**: [http://13.201.9.95/health](http://13.201.9.95/health)
 
 ---
 
-## 🏁 How to Start
-If you are an evaluator or developer looking to run this locally, please jump to our dedicated guide:
-👉 **[Run Literally Anywhere: Local Setup Guide](./run_locally.md)**
+## 🏁 Getting Started
+If you are an evaluator or developer looking to run this project locally, please jump to our dedicated guide:
+👉 **[Local Setup Guide: Run Literally Anywhere](./run_locally.md)**
 
 ---
 
-## 🔥 Key Innovations
+## 🔥 Project Highlights & Innovations
 
 ### 🔍 1. Smart LAS Ingestion Engine
-Unlike simple CSV parsers, our engine is built specifically for the **Log ASCII Standard (LAS)**.
-- **Header Intelligence**: Automatically extracts metadata like `WELL`, `FIELD`, `API Number`, and `Company`.
-- **Curve Profiling**: Pre-calculates `min`, `max`, and `mean` values for every curve upon upload, allowing for instant AI context without re-processing massive files.
-- **Hybrid Storage**: Combines the durability of **Amazon S3** (for raw file preservation) with the speed of **PostgreSQL** (for structured data access).
+Unlike generic data parsers, this system is engineered specifically for the **Log ASCII Standard (LAS)** format.
+- **Header Intelligence**: Automatically mines critical metadata like `WELL`, `FIELD`, `API Number`, and `Company` from the LAS header.
+- **Metadata Indexing**: Pre-calculates statistical envelopes (`min`, `max`, `mean`) for every curve during ingestion. This allows the AI to have instant "Contextual Awareness" without re-processing entire datasets for every query.
+- **Hybrid Storage Architecture**: Combines the durability of **Amazon S3** (for raw file preservation) with the agility of **PostgreSQL** (for structured data access and performance).
 
-### 📊 2. Interactive Petrophysical Visualizer
-Visualization is the heart of geological analysis.
-- **Track-Based Viewing**: Render multiple curves (Gamma Ray, Resistivity, Porosity) on a synchronized depth axis.
-- **Real-Time Filtering**: Isolate specific depth intervals (e.g., target pay zones) with sub-second responsiveness.
-- **UX Excellence**: A premium, "Glassmorphism" inspired dashboard built with **Tailwind CSS** and **Plotly.js**.
+### 📊 2. High-Performance Petrophysical Visualizer
+Visualization is the fundamental tool for geological reasoning.
+- **Synchronized Multi-Track Views**: Render multiple curves side-by-side on a shared, unified depth axis.
+- **Precision Interaction**: Built-in support for zooming, panning, and interval isolation to focus on specific reservoirs or zones of interest.
+- **Modern UI/UX**: A clean, "Glassmorphism" dashboard built with **Tailwind CSS** and **Plotly.js**, optimized for high-density data interpretation.
 
-### 🧠 3. Context-Aware AI Interpretation (The "Brain")
-We don't just "chat" with your data; we interpret it.
-- **Geologic Mapping**: Automatically identifies lithology trends and identifies potential fluid contacts.
-- **Floating AI Assistant**: A specialized chatbot that maintains a **Persistent State**. It "sees" what you are looking at—knowing the exact curves, ranges, and well metadata.
-- **Claude 3.5 Sonnet**: Powered by the most sophisticated reasoning model available to ensure petrophysical accuracy.
+### 🧠 3. Context-Aware AI Petrophysicist
+We've integrated the world's most sophisticated reasoning model (**Claude 3.5 Sonnet**) directly into the workflow.
+- **Automated Lithology Insights**: Identifies rock types, fluid contacts, and potential anomalies based on numerical curve signatures.
+- **Persistent AI Assistant**: A specialized chatbot that understands the *current* well you are viewing. It doesn't just guess; it checks the actual statistics and metadata of the active well to answer your questions.
 
 ---
 
-## 🏗️ Technical Blueprint
+## 🏗️ Technical Architecture
 
-### The Architecture
-The platform utilizes a **Decoupled Service Architecture** designed for high availability and clean separation of concerns.
+### System Data Flow
+1.  **Ingestion**: User uploads LAS -> Backend parses numerical data -> S3 (Raw Archive) + Postgres (Metadata/Index).
+2.  **Visualization**: Frontend requests optimized data segments -> Express returns JSON -> Plotly renders interactive tracks.
+3.  **AI Engine**: Frontend triggers analysis -> Backend collects DB stats + User prompt -> Anthropic API generates reasoning -> Results stored in `interpretations` table.
 
-```mermaid
-graph TD
-    User((User)) -->|HTTPS| Vercel[Vercel Frontend]
-    Vercel -->|REST API| EC2[AWS EC2 Backend]
-    EC2 -->|Query| RDS[(PostgreSQL)]
-    EC2 -->|Stream| S3[Amazon S3]
-    EC2 -->|Reasoning| Claude[Anthropic AI]
-    GitHub[GitHub Actions] -->|Deploy| ECR[Amazon ECR]
-    ECR -->|Pull| EC2
-```
-
-### Tech Stack Breakdown
-| Component | Choice | Why? |
+### Technology Stack
+| Layer | Tech Choice | Why? |
 | :--- | :--- | :--- |
-| **Frontend** | React 19 + Vite | Blazing fast HMR and modern rendering features. |
-| **Styling** | Tailwind CSS | Rapid UI development with professional aesthetic. |
-| **Backend** | Express.js | Industrial-standard, lightweight, and scalable. |
-| **Database** | PostgreSQL | Handles complex relationships between Wells and Curves better than NoSQL. |
-| **Registry** | Amazon ECR | Secure, private, and integrated perfectly with AWS EC2. |
-| **Orchestration** | Docker Compose | Simple, reproducible environment management. |
+| **Frontend** | React 19 + Vite | Minimal bundle size, blazing fast HMR, and modern hooks. |
+| **Styling** | Tailwind CSS | Utility-first approach for consistent, premium aesthetics. |
+| **Backend** | Node.js (Express) | High concurrency for I/O bound parsing tasks. |
+| **Database** | PostgreSQL 16 | Relational power for complex well-to-curve modeling. |
+| **AI Intelligence** | Claude 3.5 Sonnet | Superior technical reasoning compared to other LLMs. |
+| **Infrastructure** | Docker + AWS | Industry-standard reliability and container portability. |
 
 ---
 
-## � Project Navigation
+## 📂 Project Structure
 - `/frontend`: React application, UI components, and visualization logic.
-- `/backend`: Express API, LAS parsing engine, and AI service logic.
-- `/docker-compose.yml`: Local and production orchestration.
-- `/.github/workflows`: The "Engine Room" (CI/CD pipelines).
-- `DEPLOYMENT.md`: Infrastructure setup for AWS/GitHub.
-- `run_locally.md`: Developer onboarding.
+- `/backend`: Express API, LAS parsing engine, and database logic.
+- `/docker-compose.yml`: Local and production container orchestration.
+- `/.github/workflows`: Fully automated Build -> Push -> Deploy pipelines.
+- `run_locally.md`: Comprehensive developer onboarding guide.
 
 ---
 
-## 🚀 Advanced DevOps Strategy
-This project implements a professional **Continuous Deployment** strategy:
-1.  **Build**: GitHub Actions builds a Production Docker image on every push to `main`.
-2.  **Verify**: Built-in linting and optional testing suites ensure code integrity.
-3.  **Deploy**: Images are pushed to **AWS ECR**, and a secure "remote-exec" script updates the EC2 instance instantly.
-4.  **Secrets**: 100% of sensitive configuration is managed via GitHub Secrets—zero leakage in the codebase.
+## 🚢 Continuous Deployment (CI/CD)
+This project follows professional **DevOps** practices:
+- **Build**: Every push to `main` triggers a GitHub Action to build a production Docker image.
+- **Storage**: Images are securely stored in **Amazon ECR**.
+- **Deployment**: The pipeline SSHes into an **AWS EC2** instance and orchestrates a fresh rollout using Docker Compose.
+- **Frontend**: Automatically synchronized and served via **Vercel** with global edge CDN.
 
 ---
 
----
-
-## �️ Demo Video
-*[Placeholder: Add your video link here!]*
+## 📽️ Demo Presentation
+*[Placeholder: Google Drive Link(will add after making the video)]*
 
 ---
 
-## ✅ Submission Checklist (Deliverables)
+## ✅ Deliverables Checklist
 
-- [x] **Architecture**: Decoupled Frontend/Backend with secure API communication.
-- [x] **File Ingestion**: Automatic parsing and storage in **Amazon S3**.
-- [x] **Visualization**: Interactive depth-indexed curves using Plotly.js.
-- [x] **AI Interpretation**: Automated geologic insights using Anthropic Claude.
-- [x] **Bonus**: Full Conversational Chatbot interface.
-- [x] **Deployment**: Live on **AWS EC2** (Backend) and **Vercel** (Frontend).
-- [x] **Documentation**: Detailed local and cloud guides provided.
+- [x] **Core Architecture**: Decoupled Full-Stack design via REST API.
+- [x] **Data Ingestion**: Multi-stage parsing and S3/Postgres storage.
+- [x] **Visualization**: Interactive Track-based Plotly.js charts.
+- [x] **AI Interpretation**: Deep petrophysical analysis via Anthropic AI.
+- [x] **Bonus Feature**: Specialized context-aware Well Chatbot.
+- [x] **Cloud Deployment**: Live on **AWS** and **Vercel**.
+- [x] **Documentation**: Standard `README` and `Local Setup` guides.
+
+---
+
+## 👤 Project Information
+**Author**: adldi07 (Adesh Kumar | IIT ISM Dhanbad)
+**Project Status**: 🟢 Production Ready / Full Feature Complete
 
 ---
 
-## �👤 Project Status
-**Author**: adldi07 (Engineering Assessment for One-Geo)
-**Status**: 🟢 Production Ready
-
----
+> *Designed and engineered for One-Geo as a demonstration of high-performance full-stack data applications.*
