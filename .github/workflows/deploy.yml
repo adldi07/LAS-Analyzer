@@ -62,16 +62,15 @@ jobs:
             # Navigate to the compose file location
             cd ~/
             
-            # Pull the latest backend image
-            docker-compose pull
+            # Create .env file for production
+            echo "CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}" > .env
+            echo "DB_HOST=db" >> .env
+            echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+            echo "CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}" >> .env
+            echo "ECR_REGISTRY=${ECR_REGISTRY}" >> .env
             
-            # Restart services
-            # This will use the env vars passed in the previous steps or defined in .env
-            CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }} \
-            DB_HOST=${{ secrets.DB_HOST }} \
-            DB_USER=${{ secrets.DB_USER }} \
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            DB_NAME=${{ secrets.DB_NAME }} \
-            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }} \
-            ECR_REGISTRY=${ECR_REGISTRY} \
-            docker-compose up -d
+            # Pull and Restart using modern Docker Compose (v2)
+            docker compose pull
+            docker compose up -d
