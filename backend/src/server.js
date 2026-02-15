@@ -30,6 +30,11 @@ app.use('/api/wells', wellsRouter);
 app.use('/api/wells', dataRouter);
 app.use('/api/wells', interpretRouter); // ADD THIS
 
+// Base API route
+app.get('/api', (req, res) => {
+  res.send('Hello from server');
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -57,13 +62,15 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log('=================================');
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
-  console.log('=================================');
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log('=================================');
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+    console.log(`📡 API endpoint: http://localhost:${PORT}/api`);
+    console.log('=================================');
+  });
+}
 
 module.exports = app;
