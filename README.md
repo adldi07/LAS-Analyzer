@@ -18,8 +18,9 @@
 ---
 
 ## 🏁 Getting Started
-If you are an evaluator or developer looking to run this project locally, please jump to our dedicated guide:
-👉 **[Local Setup Guide: Run Literally Anywhere](./run_locally.md)**
+
+### 👉 [**Local Setup Guide: Run Literally Anywhere**](./run_locally.md)
+**If you are an evaluator or developer looking to run this project locally, please jump to our dedicated guide above.**
 
 ---
 
