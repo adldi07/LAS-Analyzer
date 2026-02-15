@@ -1,16 +1,91 @@
-# React + Vite
+# 🎨 LAS Analyzer Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Welcome to the frontend of the **LAS Well Log Analyzer**, a modern, high-performance web application designed for geologists and petrophysicists to visualize and interpret well logging data.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Overview
 
-## React Compiler
+This application serves as the interactive cockpit for the LAS Analyzer system. It provides a seamless experience for uploading industrial standard `.las` files, visualizing high-density log curves (GR, RHOB, NPHI, etc.), and generating AI-powered petrophysical insights.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### ✨ Key Features
+- **Interactive Log Visualization**: High-performance multi-track charts using `Recharts`.
+- **Dynamic Depth Scaling**: Zoom and filter specific depth intervals in real-time.
+- **AI interpretation Hub**: Integration with LLMs (Claude/GPT) to translate complex curve patterns into geological reports.
+- **Responsive Management**: A sleek dashboard to manage multiple wells and their associated metadata.
+- **Glassmorphic Design**: A premium, modern UI built with Tailwind CSS for maximum clarity.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Tech Stack
+
+- **Framework**: [React 18](https://reactjs.org/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Charts**: [Recharts](https://recharts.org/)
+- **State Management**: React Hooks & Context API
+- **HTTP Client**: Axios
+
+---
+
+## 🏁 Getting Started
+
+### 📋 Prerequisites
+- **Node.js** (v18 or higher)
+- **npm** (v9 or higher)
+- A running instance of the [LAS Backend](../backend/README.md)
+
+### ⚙️ Installation
+
+1. **Enter the directory**:
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Configure the environment**:
+   Create a `.env` file in the `frontend` folder:
+   ```env
+   VITE_API_URL=http://localhost:3000/api
+   ```
+
+4. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+   *The application will be available at [http://localhost:5173](http://localhost:5173)*
+
+---
+
+## 📂 Project Structure Highlights
+
+- `src/components/`: Reusable UI components (Buttons, Cards, Modals).
+- `src/pages/`: Main application views (Dashboard, Well Details, Upload).
+- `src/services/` : API integration and data transformation logic.
+- `src/utils/` : Helper functions for unit conversions and parsing.
+- `src/styles/` : Global styles and Tailwind configuration.
+
+---
+
+## 📜 Available Scripts
+
+| Script | Purpose |
+| :--- | :--- |
+| `npm run dev` | Starts the Vite development server with HMR. |
+| `npm run build` | Compiles the application into highly optimized static assets for production. |
+| `npm run preview` | Locally previews the production build. |
+| `npm run lint` | Runs ESLint to check for code quality and style issues. |
+
+---
+
+## 🌐 Production Deployment
+
+For production, the frontend is optimized for deployment on platforms like **Vercel** or **Netlify**. Ensure that your environment variables (like `VITE_API_URL`) point to your production backend (e.g., `https://api.yourdomain.com`).
+
+---
+
+> Built by **Adesh Kumar**
