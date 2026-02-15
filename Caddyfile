@@ -1,3 +1,11 @@
-13-201-9-95.sslip.io {
-    reverse_proxy app:3000
+{
+    email adesh.gusknp2022@gmail.com
+}
+
+13-126-13-42.sslip.io {
+    reverse_proxy app:3000 {
+        transport http {
+            read_timeout 300s
+        }
+    }
 }
