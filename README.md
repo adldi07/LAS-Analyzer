@@ -12,8 +12,8 @@
 
 ## 🌎 Live Environment
 *   **🚀 Production App**: [las-analyzer.vercel.app](https://las-analyzer.vercel.app)
-*   **🔌 System API**: [http://13.201.9.95/api](http://13.201.9.95/api)
-*   **💓 Health Status**: [http://13.201.9.95/health](http://13.201.9.95/health)
+*   **🔌 System API**: [https://13-201-9-95.sslip.io/api](https://13-201-9-95.sslip.io/api)
+*   **💓 Health Status**: [https://13-201-9-95.sslip.io/health](https://13-201-9-95.sslip.io/health)
 
 ---
 

@@ -1,0 +1,3 @@
+13-201-9-95.sslip.io {
+    reverse_proxy app:3000
+}
