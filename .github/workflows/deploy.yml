@@ -72,5 +72,6 @@ jobs:
             DB_USER=${{ secrets.DB_USER }} \
             DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
             DB_NAME=${{ secrets.DB_NAME }} \
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }} \
             ECR_REGISTRY=${ECR_REGISTRY} \
             docker-compose up -d
