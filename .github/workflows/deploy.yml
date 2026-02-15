@@ -1,0 +1,76 @@
+name: Deploy Application
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # ------------------------------------------------------------------
+  # BACKEND DEPLOYMENT (Docker + EC2)
+  # ------------------------------------------------------------------
+  deploy-backend:
+    runs-on: ubuntu-latest
+    if: github.repository != 'vercel/next.js' # Prevents accidental deploys if forked
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Push Backend Image to ECR
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/DockerFile
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/las-analyzer-backend:latest
+          cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/las-analyzer-backend:latest
+          cache-to: type=inline
+
+      - name: Copy docker-compose.yml to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "~/"
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Login to ECR
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            
+            # Export the registry for docker-compose to use
+            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+            
+            # Navigate to the compose file location
+            cd ~/
+            
+            # Pull the latest backend image
+            docker-compose pull
+            
+            # Restart services
+            # This will use the env vars passed in the previous steps or defined in .env
+            CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }} \
+            DB_HOST=${{ secrets.DB_HOST }} \
+            DB_USER=${{ secrets.DB_USER }} \
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            DB_NAME=${{ secrets.DB_NAME }} \
+            ECR_REGISTRY=${ECR_REGISTRY} \
+            docker-compose up -d
