@@ -63,6 +63,10 @@ jobs:
             export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
             export DB_NAME="${{ secrets.DB_NAME }}"
             export CORS_ORIGIN="${{ secrets.CORS_ORIGIN }}"
+            export AWS_S3_BUCKET="${{ secrets.AWS_S3_BUCKET }}"
+            export AWS_REGION="${{ secrets.AWS_REGION }}"
+            export AWS_ACCESS_KEY_ID="${{ secrets.S3_ACCESS_KEY_ID }}"
+            export AWS_SECRET_ACCESS_KEY="${{ secrets.S3_SECRET_ACCESS_KEY }}"
             
             # Navigate to the compose file location
             cd ~/
