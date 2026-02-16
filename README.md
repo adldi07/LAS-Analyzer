@@ -47,10 +47,94 @@ We've integrated the world's most sophisticated reasoning model (**Claude 3.5 So
 
 ## 🏗️ Technical Architecture
 
-### System Data Flow
-1.  **Ingestion**: User uploads LAS -> Backend parses numerical data -> S3 (Raw Archive) + Postgres (Metadata/Index).
-2.  **Visualization**: Frontend requests optimized data segments -> Express returns JSON -> Plotly renders interactive tracks.
-3.  **AI Engine**: Frontend triggers analysis -> Backend collects DB stats + User prompt -> Anthropic API generates reasoning -> Results stored in `interpretations` table.
+### 📐 System Design Overview
+
+```ascii
+┌─────────────────────────────────────────────────────────────────────┐
+│                         PRESENTATION LAYER                           │
+│                                                                      │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  │
+│  │  File Upload     │  │  Visualization   │  │  AI Insights     │  │
+│  │  Component       │  │  Dashboard       │  │  Panel           │  │
+│  │                  │  │                  │  │                  │  │
+│  │  - Drag & Drop   │  │  - Plotly Charts │  │  - Analysis      │  │
+│  │  - Validation    │  │  - Curve Select  │  │  - Statistics    │  │
+│  │  - Progress      │  │  - Depth Range   │  │  - Insights      │  │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘  │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │              Chatbot Interface (Bonus)                       │  │
+│  │  - Message Input/Display                                     │  │
+│  │  - Context-Aware Responses                                   │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+                                    │
+                              HTTP/REST API
+                                    │
+┌─────────────────────────────────────────────────────────────────────┐
+│                         APPLICATION LAYER                            │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │                      API Gateway / Router                     │  │
+│  │  - Request Validation (Zod/Joi)                              │  │
+│  │  - Authentication Middleware                                  │  │
+│  │  - Rate Limiting                                              │  │
+│  │  - Error Handling                                             │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                    │                                 │
+│       ┌────────────────────────────┼────────────────────────────┐   │
+│       │                            │                            │   │
+│  ┌────▼─────────┐  ┌──────────────▼────────┐  ┌───────────────▼┐  │
+│  │ File Service │  │  Data Service         │  │  AI Service    │  │
+│  │              │  │                       │  │                 │  │
+│  │ - Parse LAS  │  │ - Query Measurements  │  │ - Interpret    │  │
+│  │ - Upload S3  │  │ - Filter by Depth     │  │ - Analyze      │  │
+│  │ - Validate   │  │ - Aggregate Stats     │  │ - Chat         │  │
+│  └──────────────┘  └───────────────────────┘  └─────────────────┘  │
+│         │                      │                         │          │
+└─────────┼──────────────────────┼─────────────────────────┼──────────┘
+          │                      │                         │
+          │         ┌────────────▼──────────────┐          │
+          │         │                            │          │
+          │         │   Data Access Layer        │          │
+          │         │   (Repository Pattern)     │          │
+          │         │                            │          │
+          │         │  - WellRepository          │          │
+          │         │  - CurveRepository         │          │
+          │         │  - MeasurementRepository   │          │
+          │         │  - InterpretationRepository│          │
+          │         └────────────┬───────────────┘          │
+          │                      │                          │
+┌─────────▼──────────────────────▼─────────────────────────▼──────────┐
+│                         PERSISTENCE LAYER                            │
+│                                                                      │
+│  ┌──────────────────┐       ┌─────────────────────────────────┐    │
+│  │   Amazon S3      │       │      PostgreSQL Database        │    │
+│  │                  │       │                                 │    │
+│  │  Bucket:         │       │  ┌───────────────────────────┐ │    │
+│  │  las-files/      │       │  │  wells                    │ │    │
+│  │                  │       │  │  - metadata & header      │ │    │
+│  │  Object Key:     │       │  └───────────────────────────┘ │    │
+│  │  {wellId}/       │       │                                 │    │
+│  │  original.las    │       │  ┌───────────────────────────┐ │    │
+│  │                  │       │  │  curves                   │ │    │
+│  │  Access:         │       │  │  - curve definitions      │ │    │
+│  │  - IAM Role      │       │  └───────────────────────────┘ │    │
+│  │  - Pre-signed    │       │                                 │    │
+│  │    URLs          │       │  ┌───────────────────────────┐ │    │
+│  └──────────────────┘       │  │  measurements             │ │    │
+│                              │  │  - depth-indexed values   │ │    │
+│  ┌──────────────────┐       │  │  - indexed on (curve,     │ │    │
+│  │  Claude API      │       │  │    depth)                 │ │    │
+│  │                  │       │  └───────────────────────────┘ │    │
+│  │  - API Key in    │       │                                 │    │
+│  │    Backend ENV   │       │  ┌───────────────────────────┐ │    │
+│  │  - Rate Limits   │       │  │  interpretations          │ │    │
+│  │  - Error Retry   │       │  │  - AI-generated insights  │ │    │
+│  └──────────────────┘       │  └───────────────────────────┘ │    │
+│                              └─────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
 ### Technology Stack
 | Layer | Tech Choice | Why? |
