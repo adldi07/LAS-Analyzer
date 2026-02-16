@@ -52,10 +52,11 @@ The application requires **PostgreSQL**. You have two ways to set this up:
     ```bash
     docker-compose up db -d
     ```
-2.  **Connection Details**:
+3.  **Connection Details**:
     - **Host**: `localhost:5432`
     - **User**: `postgres` | **Pass**: `admin123`
     - **DB Name**: `las_analyzer`
+    - *Note: If you change these, ensure you update the backend `.env` accordingly.*
 
 ### 🔧 Option B: Manual Installation
 1.  Install PostgreSQL locally.
