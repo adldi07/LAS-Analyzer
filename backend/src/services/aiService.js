@@ -1,5 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const pool = require('../config/database');
+const featureFlags = require('../config/featureFlags');
 
 const anthropic = new Anthropic({
   apiKey: process.env.CLAUDE_API_KEY,
@@ -559,12 +560,13 @@ ${curves.map(curve => `
     );
 
     try {
-      // --- MOCK MODE ENABLED (Save Costs) ---
-      console.log('⚠️ MOCK MODE: Returning canned interpretation to save API costs');
-      const interpretation = `
+      // Check feature flag for mock mode
+      if (featureFlags.isEnabled('mockAI')) {
+        console.log('⚠️ MOCK MODE: Returning canned interpretation (mockAI=true)');
+        const interpretation = `
 # 🧪 MOCK INTERPRETATION (Cost-Saving Mode)
 
-**Note:** This is a generated response for testing purposes. The statistics, zones, and fluid indicators shown above are REAL calculations from your data, but this text analysis is a placeholder.
+**Note:** This is a generated response for testing purposes. Toggle \`mockAI\` to \`false\` in \`backend/config/features.json\` to enable real AI analysis.
 
 ## 1. Overall Assessment
 The analyzed interval (${depthRange.start}-${depthRange.stop} ft) represents a significant sequence of interest. The system has successfully segmented the log into distinct lithological zones, suggesting a changing depositional environment.
@@ -580,18 +582,37 @@ The interval has been divided into ${zones ? zones.length : 0} zones:
 ${zones && zones.length > 0 ? `- **Zone 1:** Shows characteristics of ${zones[0].characterization}.` : ''}
 ${zones && zones.length > 1 ? `- **Zone 2:** Transitions into a ${zones[1].characterization}.` : ''}
 
-*To enable real AI analysis, uncomment the API call in backend/src/services/aiService.js*
-      `;
+*Edit \`backend/config/features.json\` and set \`mockAI: false\` to enable real Claude AI analysis.*
+        `;
 
-      // const message = await anthropic.messages.create({
-      //   model: 'claude-sonnet-4-20250514',
-      //   max_tokens: 2000,
-      //   messages: [{
-      //     role: 'user',
-      //     content: prompt,
-      //   }],
-      // });
-      // const interpretation = message.content[0].text;
+        return {
+          interpretation,
+          statistics: stats,
+          anomalies,
+          correlations,
+          fluidIndicators,
+          qualityIssues,
+          zones,
+          metadata: {
+            model: 'mock-mode',
+            timestamp: new Date().toISOString(),
+            depthRange,
+            curves,
+          },
+        };
+      }
+
+      // Real AI mode - call Claude API
+      console.log('🤖 REAL AI MODE: Calling Claude API (mockAI=false)');
+      const message = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: prompt,
+        }],
+      });
+      const interpretation = message.content[0].text;
 
       return {
         interpretation,
@@ -716,6 +737,15 @@ Be specific, reference actual depth values and measurements, and use professiona
    */
   async chatWithWellData(conversationHistory) {
     try {
+      // Check feature flag for chat mock mode
+      if (featureFlags.isEnabled('mockChat')) {
+        console.log('⚠️ MOCK CHAT MODE: Returning canned response (mockChat=true)');
+        return "🧪 **Mock Chat Response**\n\nThis is a placeholder response for testing. The chatbot is currently in mock mode to save API costs.\n\nTo enable real AI chat analysis, edit `backend/config/features.json` and set `mockChat: false`.\n\n*Note: The well data context and conversation history are being tracked correctly, but the AI response is mocked.*";
+      }
+
+      // Real chat mode - call Claude API
+      console.log('🤖 REAL CHAT MODE: Calling Claude API (mockChat=false)');
+
       // Separate system message from conversation
       const systemMessage = conversationHistory.find(msg => msg.role === 'system');
       const userMessages = conversationHistory.filter(msg => msg.role !== 'system');

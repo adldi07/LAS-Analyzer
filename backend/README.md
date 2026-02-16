@@ -151,6 +151,24 @@ CLAUDE_API_KEY=sk-ant-your-api-key
 CORS_ORIGIN=http://localhost:5173
 ```
 
+### 5. Feature Flags Configuration
+
+The backend uses runtime feature flags to toggle between mock and real AI API calls **without server restarts**.
+
+**Configuration:** `backend/config/features.json`
+```json
+{
+  "mockAI": true,      // true = mock interpretation, false = real Claude API
+  "mockChat": false    // true = mock chat, false = real Claude API
+}
+```
+
+**Benefits:**
+- **Cost Control**: Keep `mockAI: true` during development to avoid API charges
+- **Zero Downtime**: Edit the file on cloud environment - changes detected automatically in 1-2 seconds
+- **Flexible Testing**: Toggle features independently
+
+
 ## 🏃‍♂️ Running the Server
 
 **Development Mode** (with auto-reload):
