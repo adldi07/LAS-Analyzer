@@ -38,7 +38,17 @@ The application requires **PostgreSQL**. You have two ways to set this up:
 ### 💡 Option A: The Fast Way (Docker Compose)
 *Highly recommended. No installation or configuration needed.*
 
-1.  Start the database container:
+1.  **Configure Environment**:
+    Navigate to the project root and copy the example environment file:
+    ```bash
+    # Windows
+    copy .env.example .env
+    # Mac/Linux
+    cp .env.example .env
+    ```
+    *(Note: You can keep the default values for local development)*
+
+2.  **Start the database container**:
     ```bash
     docker-compose up db -d
     ```
@@ -50,7 +60,7 @@ The application requires **PostgreSQL**. You have two ways to set this up:
 ### 🔧 Option B: Manual Installation
 1.  Install PostgreSQL locally.
 2.  Create a fresh database named `las_analyzer`.
-3.  **Important**: Run the initialization script found at `/backend/src/models/schema.sql` to create the tables and indexes.
+3.  **Important**: Run the initialization script found at `backend/src/models/schema.sql` to create the tables and indexes.
 
 ---
 
@@ -62,25 +72,14 @@ The application requires **PostgreSQL**. You have two ways to set this up:
     npm install
     ```
 2.  **Set Environment Variables**:
-    Create a file named `.env` in the `backend` folder and add your specific keys:
-
-    ```env
-    # Application
-    PORT=3000
-    NODE_ENV=development
-
-    # Database (Use this for Option A)
-    DATABASE_URL=postgresql://postgres:admin123@localhost:5432/las_analyzer
-
-    # AI Intelligence (Required for Interpretation)
-    CLAUDE_API_KEY=your_anthropic_api_key_here
-
-    # Cloud Storage (Required for File Uploads)
-    AWS_REGION=us-east-1
-    AWS_ACCESS_KEY_ID=your_key
-    AWS_SECRET_ACCESS_KEY=your_secret
-    AWS_S3_BUCKET=your_bucket_name
+    Copy the example environment file and add your specific keys (AWS and Claude):
+    ```bash
+    # Windows
+    copy .env.example .env
+    # Mac/Linux
+    cp .env.example .env
     ```
+    *Required for full functionality: `CLAUDE_API_KEY`, `AWS_SECRET_ACCESS_KEY`, etc.*
 
 3.  **Launch**:
     ```bash
@@ -98,9 +97,12 @@ The application requires **PostgreSQL**. You have two ways to set this up:
     npm install
     ```
 2.  **Set Environment Variables**:
-    Create a `.env` file in the `frontend` folder:
-    ```env
-    VITE_API_URL=http://localhost:3000/api
+    Copy the example environment file:
+    ```bash
+    # Windows
+    copy .env.example .env
+    # Mac/Linux
+    cp .env.example .env
     ```
 3.  **Launch**:
     ```bash
@@ -113,7 +115,7 @@ The application requires **PostgreSQL**. You have two ways to set this up:
 ## 🧪 Step 5: Verification & First Flight
 
 1.  Open [http://localhost:5173](http://localhost:5173) in your browser.
-2.  **Test Upload**: Use the sample file provided at `backend/tests/fixtures/sample.las`.
+2.  **Test Upload**: Use the sample file provided at `backend/tests/fixtures/sample-las.las`.
 3.  **View Results**: Click on the well row to see the interactive charts.
 4.  **AI interpretation**: Click "Generate AI Interpretation" to verify the LLM integration.
 

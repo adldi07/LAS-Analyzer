@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? (import.meta.env.VITE_API_URL.endsWith('/') ? import.meta.env.VITE_API_URL : `${import.meta.env.VITE_API_URL}/`)
+  : 'http://localhost:3000/api/';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -24,7 +26,7 @@ export const wellApi = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await api.post('/wells', formData, {
+    const response = await api.post('wells', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -41,19 +43,19 @@ export const wellApi = {
 
   // Get well metadata
   getWell: async (wellId) => {
-    const response = await api.get(`/wells/${wellId}`);
+    const response = await api.get(`wells/${wellId}`);
     return response.data;
   },
 
   // Get all wells
   getWells: async () => {
-    const response = await api.get('/wells');
+    const response = await api.get('wells');
     return response.data;
   },
 
   // Get measurement data
   getMeasurements: async (wellId, curves, depthStart, depthStop) => {
-    const response = await api.get(`/wells/${wellId}/data`, {
+    const response = await api.get(`wells/${wellId}/data`, {
       params: {
         curves: curves.join(','),
         depthStart,
@@ -65,7 +67,7 @@ export const wellApi = {
 
   // AI Interpretation
   interpretWell: async (wellId, curves, depthStart, depthStop) => {
-    const response = await api.post(`/wells/${wellId}/interpret`, {
+    const response = await api.post(`wells/${wellId}/interpret`, {
       curves,
       depthStart,
       depthStop,
@@ -75,7 +77,7 @@ export const wellApi = {
 
   // Chatbot
   sendChatMessage: async (wellId, message, history) => {
-    const response = await api.post(`/wells/${wellId}/chat`, {
+    const response = await api.post(`wells/${wellId}/chat`, {
       message,
       history,
     });
