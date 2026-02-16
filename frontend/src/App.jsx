@@ -1,5 +1,6 @@
 // src/App.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { ChevronDown, BarChart2, Sparkles, ChevronUp } from 'lucide-react';
 import FileUpload from './components/FileUpload';
 import WellList from './components/WellList';
 import CurveSelector from './components/CurveSelector';
@@ -26,6 +27,8 @@ function App() {
 
   const [showInterpretation, setShowInterpretation] = useState(false);
   const [interpretationResults, setInterpretationResults] = useState(null);
+  const chartRef = useRef(null);
+  const aiRef = useRef(null);
 
   const handleCurveToggle = (curveMnemonic) => {
     setSelectedCurves(
@@ -33,6 +36,26 @@ function App() {
         ? selectedCurves.filter((c) => c !== curveMnemonic)
         : [...selectedCurves, curveMnemonic]
     );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedCurves(curves.map(c => c.mnemonic));
+  };
+
+  const handleClearAll = () => {
+    setSelectedCurves([]);
+  };
+
+  const handleInterpretationToggle = () => {
+    const newState = !showInterpretation;
+    setShowInterpretation(newState);
+
+    if (newState) {
+      // Small delay to allow React to render the component before scrolling
+      setTimeout(() => {
+        aiRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
   };
 
   const handleVisualize = async () => {
@@ -54,6 +77,10 @@ function App() {
 
       if (response.success) {
         setMeasurementData(response.data);
+        // Signal that visualization is below by scrolling after a short delay
+        setTimeout(() => {
+          chartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -132,18 +159,20 @@ function App() {
             </div>
 
             {/* Controls */}
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-6 items-stretch">
               {/* Curve Selection */}
               <div className="md:col-span-2">
                 <CurveSelector
                   curves={curves}
                   selectedCurves={selectedCurves}
                   onCurveToggle={handleCurveToggle}
+                  onSelectAll={handleSelectAll}
+                  onClearAll={handleClearAll}
                 />
               </div>
 
               {/* Depth Range */}
-              <div>
+              <div className="h-full">
                 <DepthRangeSelector
                   minDepth={wellData?.start_depth}
                   maxDepth={wellData?.stop_depth}
@@ -153,20 +182,36 @@ function App() {
               </div>
             </div>
 
-            {/* Visualize Button */}
-            <div className="flex justify-center">
+            {/* Visualize Button - Modern Action Area */}
+            <div className="flex flex-col items-center pt-4">
               <button
                 onClick={handleVisualize}
                 disabled={selectedCurves.length === 0}
-                className="btn-primary px-8 py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative px-12 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all duration-300 disabled:opacity-40 disabled:grayscale disabled:cursor-not-allowed overflow-hidden"
               >
-                Visualize Selected Curves
+                <div className="relative z-10 flex items-center gap-3">
+                  {measurementData ? (
+                    <>
+                      Update Visualization
+                      <ChevronDown className="w-5 h-5 animate-bounce" />
+                    </>
+                  ) : (
+                    <>
+                      Visualize Selected Data
+                      <BarChart2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    </>
+                  )}
+                </div>
+                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               </button>
+              <p className="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {selectedCurves.length} curves • {depthRange.stop - depthRange.start} ft interval
+              </p>
             </div>
 
-            {/* Chart */}
+            {/* Chart Section */}
             {measurementData && (
-              <>
+              <div ref={chartRef} className="pt-8 scroll-mt-6">
                 <WellChart
                   data={measurementData}
                   curves={selectedCurves}
@@ -176,26 +221,41 @@ function App() {
                 />
 
                 {/* AI Interpretation Button */}
-                <div className="flex justify-center">
+                <div className="flex justify-center mt-12 mb-8">
                   <button
-                    onClick={() => setShowInterpretation(!showInterpretation)}
-                    className="btn-primary px-6 py-2"
+                    onClick={handleInterpretationToggle}
+                    className="group relative px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:shadow-purple-200/50 hover:scale-[1.02] active:scale-95 transition-all duration-300 overflow-hidden"
                   >
-                    {showInterpretation ? 'Hide' : 'Show'} AI Interpretation
+                    <div className="relative z-10 flex items-center gap-3">
+                      {showInterpretation ? (
+                        <>
+                          Hide AI Insights
+                          <ChevronUp className="w-4 h-4" />
+                        </>
+                      ) : (
+                        <>
+                          Run AI Interpretation
+                          <Sparkles className="w-4 h-4 animate-pulse text-purple-200" />
+                        </>
+                      )}
+                    </div>
+                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                   </button>
                 </div>
 
                 {/* AI Interpretation Panel */}
                 {showInterpretation && (
-                  <AIInterpretation
-                    wellId={wellId}
-                    curves={selectedCurves}
-                    depthRange={depthRange}
-                    data={measurementData}
-                    onInterpretationComplete={setInterpretationResults}
-                  />
+                  <div ref={aiRef} className="scroll-mt-8">
+                    <AIInterpretation
+                      wellId={wellId}
+                      curves={selectedCurves}
+                      depthRange={depthRange}
+                      data={measurementData}
+                      onInterpretationComplete={setInterpretationResults}
+                    />
+                  </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         )}

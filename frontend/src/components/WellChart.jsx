@@ -1,48 +1,97 @@
 import React, { useMemo } from 'react';
 import Plot from 'react-plotly.js';
+import { BarChart2 } from 'lucide-react';
 
 const WellChart = ({ data, curves, depthRange, zones, fluidIndicators }) => {
+  // Define curve groups for track-based visualization
+  const groups = useMemo(() => {
+    const categories = {
+      Lithology: ['GR', 'SP', 'CALI', 'BS', 'PEF', 'PHIE', 'PHIT'],
+      Resistivity: ['ILD', 'ILM', 'LL3', 'LLD', 'LLS', 'SN', 'MSFL', 'RT', 'RES', 'RESISTIVITY'],
+      Porosity: ['RHOB', 'NPHI', 'DT', 'DPHI', 'NPHI_LS'],
+      Gas: ['GAS', 'TGAS', 'TOTAL_GAS', 'C1', 'C2', 'C3', 'IC4', 'NC4', 'IC5', 'NC5', 'HC'],
+    };
+
+    const categorized = {
+      Lithology: [],
+      Resistivity: [],
+      Porosity: [],
+      Gas: [],
+      General: []
+    };
+
+    curves.forEach(curve => {
+      const upper = curve.toUpperCase();
+      let found = false;
+
+      for (const [category, mnemonics] of Object.entries(categories)) {
+        if (mnemonics.some(m => upper.includes(m))) {
+          categorized[category].push(curve);
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) categorized.General.push(curve);
+    });
+
+    // Remove empty categories
+    return Object.fromEntries(Object.entries(categorized).filter(([_, list]) => list.length > 0));
+  }, [curves]);
+
   const plotData = useMemo(() => {
     if (!data || !data.depth) return [];
 
+    const groupKeys = Object.keys(groups);
     const traces = [];
 
-    // Create a trace for each curve
-    const curveTraces = curves.map((curveName, index) => {
-      const colors = [
-        '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
-        '#10b981', '#ef4444', '#6366f1', '#14b8a6'
-      ];
+    const colors = [
+      '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
+      '#10b981', '#ef4444', '#6366f1', '#14b8a6',
+      '#7c3aed', '#db2777', '#ea580c', '#059669'
+    ];
 
-      return {
-        x: data[curveName] || [],
-        y: data.depth || [],
-        type: 'scatter',
-        mode: 'lines',
-        name: curveName,
-        line: {
-          color: colors[index % colors.length],
-          width: 2,
-        },
-        hovertemplate:
-          `<b>${curveName}</b><br>` +
-          'Depth: %{y:.2f} ft<br>' +
-          'Value: %{x:.2f}<br>' +
-          '<extra></extra>',
-      };
+    groupKeys.forEach((groupName, trackIndex) => {
+      const xAxis = trackIndex === 0 ? 'x' : `x${trackIndex + 1}`;
+
+      groups[groupName].forEach((curveName, curveIndex) => {
+        traces.push({
+          x: data[curveName] || [],
+          y: data.depth || [],
+          type: 'scatter',
+          mode: 'lines',
+          name: curveName,
+          xaxis: xAxis,
+          yaxis: 'y',
+          line: {
+            color: colors[(trackIndex * 3 + curveIndex) % colors.length],
+            width: 1.5,
+          },
+          hovertemplate:
+            `<b>${curveName}</b><br>` +
+            'Depth: %{y:.2f} ft<br>' +
+            'Value: %{x:.2f}<br>' +
+            '<extra></extra>',
+        });
+      });
     });
 
-    traces.push(...curveTraces);
-
-    // Add gas show markers if available
+    // Add gas show markers on the Gas track if it exists
     if (fluidIndicators && fluidIndicators.hasGasData && fluidIndicators.gasShows) {
+      let gasTrackIndex = Object.keys(groups).indexOf('Gas');
+      if (gasTrackIndex === -1) gasTrackIndex = Object.keys(groups).indexOf('General');
+      if (gasTrackIndex === -1) gasTrackIndex = Object.keys(groups).length - 1;
+
+      const xAxis = gasTrackIndex === 0 ? 'x' : `x${gasTrackIndex + 1}`;
+
       const gasShowDepths = fluidIndicators.gasShows.map(show => show.depth);
       const gasShowValues = fluidIndicators.gasShows.map(show => show.totalGas);
 
-      // Create marker trace for gas shows
       traces.push({
         x: gasShowValues,
         y: gasShowDepths,
+        xaxis: xAxis,
+        yaxis: 'y',
         type: 'scatter',
         mode: 'markers',
         name: '⚡ Gas Shows',
@@ -51,280 +100,178 @@ const WellChart = ({ data, curves, depthRange, zones, fluidIndicators }) => {
             show.severity === 'high' ? '#dc2626' :
               show.severity === 'medium' ? '#f59e0b' : '#fbbf24'
           ),
-          size: fluidIndicators.gasShows.map(show =>
-            show.severity === 'high' ? 14 :
-              show.severity === 'medium' ? 12 : 10
-          ),
+          size: 10,
           symbol: 'star',
-          line: {
-            color: '#16a34a',
-            width: 2
-          }
+          line: { color: 'white', width: 1 }
         },
-        hovertemplate:
-          '<b>⚡ Gas Show</b><br>' +
-          'Depth: %{y:.2f} ft<br>' +
-          'Total Gas: %{x:.2f}<br>' +
-          '<extra></extra>',
-        showlegend: true,
+        hovertemplate: '<b>⚡ Gas Show</b><br>Depth: %{y:.2f} ft<br>Total Gas: %{x:.2f}<extra></extra>',
       });
     }
 
     return traces;
-  }, [data, curves, fluidIndicators]);
+  }, [data, groups, fluidIndicators]);
 
   const layout = useMemo(() => {
+    const groupKeys = Object.keys(groups);
+    const numTracks = groupKeys.length;
+
     const baseLayout = {
       title: {
-        text: 'Well Log Visualization',
-        font: { size: 20, weight: 'bold' },
+        text: 'Well Log Multitrack Analysis',
+        font: { size: 22, color: '#1e293b', family: 'Inter, sans-serif', weight: '800' },
+        pad: { b: 20 },
+        y: 0.98
       },
       showlegend: true,
       legend: {
-        orientation: 'h',
-        yanchor: 'bottom',
-        y: 1.02,
-        xanchor: 'right',
-        x: 1,
-      },
-      xaxis: {
-        title: 'Measurement Value',
-        gridcolor: '#e5e7eb',
+        bgcolor: 'rgba(255, 255, 255, 0.8)',
+        bordercolor: '#e2e8f0',
+        borderwidth: 1,
+        font: { size: 10, color: '#475569' },
+        orientation: 'v',
+        x: 1.02,
+        y: 1,
+        yanchor: 'top'
       },
       yaxis: {
         title: 'Depth (ft)',
-        autorange: 'reversed', // Depth increases downward (geological convention)
-        gridcolor: '#e5e7eb',
+        autorange: 'reversed',
+        gridcolor: '#f1f5f9',
+        zeroline: false,
+        tickfont: { size: 11, color: '#64748b' },
+        side: 'left',
+        showline: true,
+        linecolor: '#cbd5e1'
       },
       hovermode: 'closest',
-      plot_bgcolor: '#f9fafb',
-      paper_bgcolor: 'white',
-      margin: { l: 80, r: 40, t: 80, b: 60 },
+      plot_bgcolor: '#ffffff',
+      paper_bgcolor: '#ffffff',
+      margin: { l: 70, r: 120, t: 100, b: 60 },
       autosize: true,
       shapes: [],
       annotations: [],
     };
 
-    // Add zone backgrounds if available
-    if (zones && zones.length > 1) {
-      baseLayout.shapes = zones.map((zone, index) => {
-        // Determine color based on characterization
-        let fillcolor = 'rgba(200, 200, 200, 0.1)'; // Default gray
+    // Calculate domain for each track
+    groupKeys.forEach((groupName, i) => {
+      const margin = 0.04;
+      const width = (1 - (numTracks - 1) * margin) / numTracks;
+      const start = i * (width + margin);
+      const end = start + width;
 
-        if (zone.characterization.includes('Shaly')) {
-          fillcolor = index % 2 === 0 ? 'rgba(156, 163, 175, 0.15)' : 'rgba(156, 163, 175, 0.08)';
-        } else if (zone.characterization.includes('Clean')) {
-          fillcolor = index % 2 === 0 ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.06)';
-        } else if (zone.characterization.includes('Mixed')) {
-          fillcolor = index % 2 === 0 ? 'rgba(168, 85, 247, 0.12)' : 'rgba(168, 85, 247, 0.06)';
-        } else {
-          fillcolor = index % 2 === 0 ? 'rgba(200, 200, 200, 0.12)' : 'rgba(200, 200, 200, 0.06)';
-        }
+      const axisName = i === 0 ? 'xaxis' : `xaxis${i + 1}`;
 
-        return {
-          type: 'rect',
-          xref: 'paper',
-          yref: 'y',
-          x0: 0,
-          x1: 1,
-          y0: zone.depthRange.start,
-          y1: zone.depthRange.end,
-          fillcolor: fillcolor,
-          line: {
-            width: 0
-          },
-          layer: 'below'
-        };
-      });
-
-      // Add zone labels
-      baseLayout.annotations = zones.map((zone) => ({
-        xref: 'paper',
-        yref: 'y',
-        x: 0.02,
-        y: (zone.depthRange.start + zone.depthRange.end) / 2,
-        text: `Zone ${zone.id}<br>${zone.characterization}`,
-        showarrow: false,
-        font: {
-          size: 10,
-          color: '#6b7280'
+      baseLayout[axisName] = {
+        title: {
+          text: groupName,
+          font: { size: 12, weight: 'bold', color: '#334155' }
         },
-        bgcolor: 'rgba(255, 255, 255, 0.8)',
-        bordercolor: '#d1d5db',
-        borderwidth: 1,
-        borderpad: 4,
-        align: 'left'
-      }));
-    }
+        domain: [start, end],
+        gridcolor: '#f1f5f9',
+        zeroline: false,
+        tickfont: { size: 10, color: '#94a3b8' },
+        showline: true,
+        linecolor: '#cbd5e1',
+        mirror: true
+      };
 
-    // Add gas zone highlights if available
-    if (fluidIndicators && fluidIndicators.hasGasData && fluidIndicators.gasZones) {
-      fluidIndicators.gasZones.forEach((gasZone) => {
-        // Parse depth range (format: "8666.0-8679.0 ft")
-        const depthMatch = gasZone.depthRange.match(/([\d.]+)-([\d.]+)/);
-        if (depthMatch) {
-          const start = parseFloat(depthMatch[1]);
-          const end = parseFloat(depthMatch[2]);
+      // Set logarithmic scale for resistivity
+      if (groupName === 'Resistivity') {
+        baseLayout[axisName].type = 'log';
+        baseLayout[axisName].dtick = 1;
+      }
+    });
 
-          // Add green highlight for gas zones
-          baseLayout.shapes.push({
-            type: 'rect',
-            xref: 'paper',
-            yref: 'y',
-            x0: 0,
-            x1: 1,
-            y0: start,
-            y1: end,
-            fillcolor: 'rgba(34, 197, 94, 0.15)',
-            line: {
-              color: 'rgba(34, 197, 94, 0.5)',
-              width: 2,
-              dash: 'dot'
-            },
-            layer: 'below'
-          });
+    // Add zone backgrounds
+    if (zones && zones.length > 1) {
+      zones.forEach((zone, index) => {
+        let fillcolor = index % 2 === 0 ? 'rgba(241, 245, 249, 0.5)' : 'rgba(226, 232, 240, 0.3)';
 
-          // Add gas zone label
-          baseLayout.annotations.push({
-            xref: 'paper',
-            yref: 'y',
-            x: 0.98,
-            y: (start + end) / 2,
-            text: `⚡ Gas Zone<br>${gasZone.thickness} ft`,
-            showarrow: false,
-            font: {
-              size: 10,
-              color: '#16a34a',
-              weight: 'bold'
-            },
-            bgcolor: 'rgba(220, 252, 231, 0.9)',
-            bordercolor: '#16a34a',
-            borderwidth: 2,
-            borderpad: 4,
-            align: 'right'
-          });
-        }
+        baseLayout.shapes.push({
+          type: 'rect', xref: 'paper', yref: 'y',
+          x0: 0, x1: 1,
+          y0: zone.depthRange.start, y1: zone.depthRange.end,
+          fillcolor: fillcolor, line: { width: 0 }, layer: 'below'
+        });
       });
     }
 
     return baseLayout;
-  }, [zones, fluidIndicators]);
+  }, [groups, zones, fluidIndicators]);
 
   const config = {
     responsive: true,
     displayModeBar: true,
     displaylogo: false,
     modeBarButtonsToRemove: ['lasso2d', 'select2d'],
-    toImageButtonOptions: {
-      format: 'png',
-      filename: 'well_log_chart',
-      height: 1000,
-      width: 1400,
-      scale: 2,
-    },
   };
 
   if (!data || !data.depth || data.depth.length === 0) {
     return (
-      <div className="card text-center py-12">
-        <p className="text-gray-500">
-          Select curves and depth range to visualize data
-        </p>
+      <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl text-center py-20">
+        <div className="max-w-xs mx-auto">
+          <BarChart2 className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-lg font-bold text-slate-700">No Data Visualized</h3>
+          <p className="text-sm text-slate-500 mt-2">
+            Configure your curve selection and depth range above to generate the log tracks.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="card">
-      {/* Chart Legend Info */}
-      {(zones?.length > 1 || fluidIndicators?.hasGasData) && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-900 font-medium mb-2">
-            📊 Enhanced Visualization:
-          </p>
-          <div className="flex flex-wrap gap-4 text-xs text-blue-800">
-            {zones?.length > 1 && (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-200 border border-gray-400 rounded"></div>
-                <span>Geological zones (alternating backgrounds)</span>
-              </div>
-            )}
-            {fluidIndicators?.hasGasData && (
-              <>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-100 border-2 border-green-500 rounded"></div>
-                  <span>Gas zones (green highlights)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">⭐</span>
-                  <span>Gas shows (star markers)</span>
-                </div>
-              </>
-            )}
+    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+      <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <BarChart2 className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800 tracking-tight">Well Log Visualization</h3>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none">
+              {Object.keys(groups).length} Active Tracks • {curves.length} Total Curves
+            </p>
           </div>
         </div>
-      )}
 
-      <Plot
-        data={plotData}
-        layout={layout}
-        config={config}
-        style={{ width: '100%', height: '700px' }}
-        useResizeHandler={true}
-      />
-
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div className="bg-gray-50 p-3 rounded">
-          <p className="text-gray-600">Depth Points</p>
-          <p className="text-lg font-semibold">{data.depth.length}</p>
-        </div>
-        <div className="bg-gray-50 p-3 rounded">
-          <p className="text-gray-600">Depth Range</p>
-          <p className="text-lg font-semibold">
-            {Math.min(...data.depth).toFixed(1)} - {Math.max(...data.depth).toFixed(1)} ft
-          </p>
-        </div>
-        <div className="bg-gray-50 p-3 rounded">
-          <p className="text-gray-600">Curves Displayed</p>
-          <p className="text-lg font-semibold">{curves.length}</p>
-        </div>
-        <div className="bg-gray-50 p-3 rounded">
-          <p className="text-gray-600">Total Data Points</p>
-          <p className="text-lg font-semibold">
-            {(data.depth.length * curves.length).toLocaleString()}
-          </p>
+        <div className="flex gap-2">
+          {Object.keys(groups).map((g, i) => (
+            <span key={g} className="px-2 py-1 bg-white border border-slate-200 rounded text-[9px] font-black text-slate-500 uppercase">
+              T{i + 1}: {g}
+            </span>
+          ))}
         </div>
       </div>
 
-      {/* Enhanced Stats */}
-      {(zones?.length > 1 || fluidIndicators?.hasGasData) && (
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-          {zones?.length > 1 && (
-            <div className="bg-purple-50 p-3 rounded border border-purple-200">
-              <p className="text-purple-600 font-medium">Zones Identified</p>
-              <p className="text-2xl font-bold text-purple-700">{zones.length}</p>
-            </div>
-          )}
-          {fluidIndicators?.hasGasData && (
-            <>
-              <div className="bg-green-50 p-3 rounded border border-green-200">
-                <p className="text-green-600 font-medium">Gas Shows</p>
-                <p className="text-2xl font-bold text-green-700">
-                  {fluidIndicators.summary.totalGasShows}
-                </p>
-              </div>
-              <div className="bg-green-50 p-3 rounded border border-green-200">
-                <p className="text-green-600 font-medium">Peak Gas</p>
-                <p className="text-2xl font-bold text-green-700">
-                  {fluidIndicators.summary.maxGasValue.toFixed(1)}
-                </p>
-              </div>
-            </>
-          )}
+      <div className="p-6">
+        <Plot
+          data={plotData}
+          layout={layout}
+          config={config}
+          style={{ width: '100%', height: '800px' }}
+          useResizeHandler={true}
+        />
+
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+          <StatCard label="Measurements" value={data.depth.length.toLocaleString()} unit="pts" />
+          <StatCard label="Depth Range" value={`${Math.min(...data.depth).toFixed(0)}-${Math.max(...data.depth).toFixed(0)}`} unit="ft" />
+          <StatCard label="Data Density" value={(data.depth.length * curves.length).toLocaleString()} unit="points" />
+          <StatCard label="Active Curves" value={curves.length} unit="mnemonic" />
         </div>
-      )}
+      </div>
     </div>
   );
 };
+
+const StatCard = ({ label, value, unit }) => (
+  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+    <div className="flex items-baseline gap-1">
+      <span className="text-xl font-black text-slate-800">{value}</span>
+      <span className="text-[10px] font-bold text-slate-500 uppercase">{unit}</span>
+    </div>
+  </div>
+);
 
 export default WellChart;
