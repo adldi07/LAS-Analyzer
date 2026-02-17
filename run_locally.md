@@ -52,7 +52,7 @@ The application requires **PostgreSQL**. You have two ways to set this up:
     ```bash
     docker-compose up db -d
     ```
-    *Note: It there is db in between -- to run only postgres container from docker-compose.yml*
+    *Note: there is db in between up and -d  --- to run only postgres container from docker-compose.yml*
 3.  **Connection Details**:
     - **Host**: `localhost:5432`
     - **User**: `postgres` | **Pass**: `admin123`
