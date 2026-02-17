@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Brain, TrendingUp, AlertTriangle, Link2, Loader2 } from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, Link2, Loader2, Download } from 'lucide-react';
 import { wellApi } from '../services/api';
 import FluidIndicatorsCard from './FluidIndicatorsCard';
 import QualityWarnings from './QualityWarnings';
 import ZoneSummary from './ZoneSummary';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const AIInterpretation = ({ wellId, curves, depthRange, data, onInterpretationComplete }) => {
   const [interpretation, setInterpretation] = useState(null);
@@ -38,6 +40,327 @@ const AIInterpretation = ({ wellId, curves, depthRange, data, onInterpretationCo
       console.error('Interpretation error:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!interpretation) {
+      console.error('No interpretation data available for download');
+      return;
+    }
+
+    setIsDownloading(true);
+    console.log('🚀 Starting PDF generation process...');
+
+    try {
+      // 1. Initialize Document
+      // Note: Testing both named and default imports for maximum compatibility with jspdf 4.x
+      let doc;
+      try {
+        doc = new jsPDF();
+      } catch (e) {
+        console.warn('Named import failed, trying default import or window global...');
+        const jsPDFRef = typeof jsPDF === 'function' ? jsPDF : (window.jsPDF || null);
+        if (!jsPDFRef) throw new Error('jsPDF library not found. Please ensure it is installed.');
+        doc = new jsPDFRef();
+      }
+
+      console.log('✅ jsPDF instance created successfully');
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      const contentWidth = pageWidth - (margin * 2);
+      let currentY = 20;
+
+      // --- 1. HEADER & METADATA ---
+      doc.setFillColor(37, 99, 235); // Primary 600
+      doc.rect(0, 0, pageWidth, 45, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('WELL ANALYSIS REPORT', margin, 20);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, margin, 30);
+      doc.text(`Powered by LAS Analyzer AI`, margin, 35);
+
+      currentY = 60;
+      doc.setTextColor(31, 41, 55);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Well Information', margin, currentY);
+      currentY += 10;
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      const wellInfo = [
+        ['Well Name:', interpretation.metadata?.wellName || 'Unknown'],
+        ['Depth Interval:', `${depthRange.start || 'N/A'} - ${depthRange.stop || 'N/A'} ft`],
+        ['Curves Analyzed:', (curves || []).join(', ')],
+        ['AI Model:', interpretation.metadata?.model || 'Claude AI']
+      ];
+
+      wellInfo.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, margin, currentY);
+        doc.setFont('helvetica', 'normal');
+
+        let displayValue = String(value);
+
+        // Truncate Curves Analyzed if it's too long for one line
+        if (label === 'Curves Analyzed:') {
+          const availableWidth = contentWidth - 45;
+          if (doc.getTextWidth(displayValue) > availableWidth) {
+            let truncated = displayValue;
+            // Shorten until it fits with the suffix
+            while (doc.getTextWidth(truncated + '....') > availableWidth && truncated.length > 0) {
+              truncated = truncated.slice(0, -1);
+            }
+            displayValue = truncated + '....';
+          }
+        }
+
+        doc.text(displayValue, margin + 45, currentY);
+        currentY += 7;
+      });
+
+      console.log('✅ Header and Well Information added');
+
+      // --- 2. STATISTICS TABLE ---
+      if (interpretation.statistics) {
+        currentY += 10;
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Statistical Summary', margin, currentY);
+        currentY += 5;
+
+        // Add filter to handle cases where stats for a curve might be null
+        const statsData = Object.entries(interpretation.statistics)
+          .filter(([_, stats]) => stats !== null && typeof stats === 'object')
+          .map(([curve, stats]) => [
+            curve,
+            (typeof stats.min === 'number' ? stats.min : 0).toFixed(2),
+            (typeof stats.max === 'number' ? stats.max : 0).toFixed(2),
+            (typeof stats.mean === 'number' ? stats.mean : 0).toFixed(2),
+            (typeof stats.stdDev === 'number' ? stats.stdDev : 0).toFixed(2)
+          ]);
+
+        if (statsData.length > 0) {
+          autoTable(doc, {
+            startY: currentY,
+            head: [['Curve', 'Min', 'Max', 'Mean', 'Std Dev']],
+            body: statsData,
+            theme: 'grid',
+            headStyles: { fillColor: [37, 99, 235], halign: 'center' },
+            styles: { fontSize: 9, cellPadding: 3 },
+            columnStyles: {
+              0: { fontStyle: 'bold' },
+              1: { halign: 'right' },
+              2: { halign: 'right' },
+              3: { halign: 'right' },
+              4: { halign: 'right' }
+            },
+            margin: { left: margin, right: margin }
+          });
+          currentY = doc.lastAutoTable.finalY + 20;
+        } else {
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'italic');
+          doc.text('No statistical data available for selected curves.', margin, currentY + 5);
+          currentY += 15;
+        }
+        console.log('✅ Statistics table handled');
+      }
+
+      // --- 3. INSIGHTS ---
+      if (interpretation.fluidIndicators || interpretation.qualityIssues) {
+        if (currentY > 230) { doc.addPage(); currentY = 25; }
+
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Exploration Insights', margin, currentY);
+        currentY += 10;
+
+        if (interpretation.fluidIndicators) {
+          doc.setFontSize(12);
+          doc.setTextColor(5, 150, 105);
+          doc.text('Fluid Indicators:', margin, currentY);
+          currentY += 7;
+          doc.setFontSize(10);
+          doc.setTextColor(75, 85, 99);
+          const feedback = interpretation.fluidIndicators.summary?.hasHydrocarbons
+            ? 'Positive hydrocarbon indicators detected in the analyzed interval.'
+            : 'No major fluid anomalies detected.';
+          const splitFeedback = doc.splitTextToSize(feedback, contentWidth);
+          doc.text(splitFeedback, margin, currentY);
+          currentY += (splitFeedback.length * 5) + 5;
+        }
+
+        if (interpretation.qualityIssues) {
+          if (currentY > 260) { doc.addPage(); currentY = 25; }
+          doc.setFontSize(12);
+          doc.setTextColor(220, 38, 38);
+          doc.text('Data Quality Warnings:', margin, currentY);
+          currentY += 7;
+          doc.setFontSize(10);
+          doc.setTextColor(75, 85, 99);
+          const qualityText = interpretation.qualityIssues.length > 0
+            ? `Identified ${interpretation.qualityIssues.length} measurement anomalies.`
+            : 'Data quality checks passed.';
+          const splitQuality = doc.splitTextToSize(qualityText, contentWidth);
+          doc.text(splitQuality, margin, currentY);
+          currentY += (splitQuality.length * 5) + 10;
+        }
+        console.log('✅ Insights added');
+      }
+
+      // --- 4. AI INTERPRETATION (Final Section) ---
+      doc.addPage();
+      currentY = 25;
+
+      doc.setFontSize(22);
+      doc.setTextColor(37, 99, 235);
+      doc.setFont('helvetica', 'bold');
+      doc.text('AI Geologic Interpretation', margin, currentY);
+
+      // Sub-underline for title
+      doc.setDrawColor(219, 234, 254); // Blue 100
+      doc.setLineWidth(0.5);
+      doc.line(margin, currentY + 4, margin + 80, currentY + 4);
+
+      currentY += 18;
+
+      const sections = interpretation.interpretation.split('\n');
+      doc.setTextColor(31, 41, 55);
+
+      sections.forEach((line) => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) {
+          currentY += 4;
+          return;
+        }
+
+        // Handle page overflow
+        if (currentY > 270) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        // 1. Handle Headers (e.g., # Header, ## Header)
+        if (trimmedLine.match(/^#+\s+/)) {
+          const headerLevel = trimmedLine.match(/^#+/)[0].length;
+          const text = trimmedLine.replace(/^#+\s+/, '').replace(/[^\x00-\x7F]/g, '');
+
+          currentY += 6;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(headerLevel === 1 ? 16 : 13);
+          doc.setTextColor(37, 99, 235);
+
+          const splitHeader = doc.splitTextToSize(text, contentWidth);
+          doc.text(splitHeader, margin, currentY);
+          currentY += (splitHeader.length * 7) + 2;
+
+          // Underline for Level 1 headers
+          if (headerLevel === 1) {
+            doc.setDrawColor(229, 231, 235);
+            doc.line(margin, currentY, margin + contentWidth, currentY);
+            currentY += 4;
+          }
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10.5);
+          doc.setTextColor(31, 41, 55);
+          return;
+        }
+
+        // 2. Handle List Items
+        if (trimmedLine.match(/^[\-\*\•]\s+/) || trimmedLine.match(/^\d+\.\s+/)) {
+          // Remove the markdown marker (e.g., "- " or "1. ")
+          let cleanText = trimmedLine.replace(/^([\-\*\•]\s+|\d+\.\s+)/, '').replace(/[^\x00-\x7F]/g, '');
+
+          // Check for lead bold: **Text**
+          const boldMatch = cleanText.match(/^\*\*(.*?)\*\*(.*)/);
+
+          doc.setFontSize(10.5);
+          doc.setTextColor(75, 85, 99);
+          doc.text('•', margin + 2, currentY);
+
+          if (boldMatch) {
+            const boldPart = boldMatch[1];
+            const normalPart = boldMatch[2];
+
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(31, 41, 55);
+            doc.text(boldPart, margin + 7, currentY);
+
+            const boldWidth = doc.getTextWidth(boldPart);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(55, 65, 81);
+
+            const splitRemaining = doc.splitTextToSize(normalPart, contentWidth - 10 - boldWidth);
+            doc.text(splitRemaining, margin + 7 + boldWidth, currentY);
+            currentY += (splitRemaining.length * 6) + 2;
+          } else {
+            doc.setFont('helvetica', 'normal');
+            const splitList = doc.splitTextToSize(cleanText, contentWidth - 8);
+            doc.text(splitList, margin + 7, currentY);
+            currentY += (splitList.length * 6) + 2;
+          }
+          return;
+        }
+
+        // 3. Handle Normal Paragraphs
+        if (trimmedLine.length > 0) {
+          // Detect full-line bold or italic
+          let style = 'normal';
+          let text = trimmedLine.replace(/[^\x00-\x7F]/g, '');
+
+          if (text.startsWith('**') && text.endsWith('**')) {
+            style = 'bold';
+            text = text.slice(2, -2);
+          } else if (text.startsWith('*') && text.endsWith('*')) {
+            style = 'italic';
+            text = text.slice(1, -1);
+          }
+
+          // Clean up internal bold tags if we are just stripping them for simplicity
+          text = text.replace(/\*\*/g, '').replace(/`/g, "'");
+
+          doc.setFont('helvetica', style);
+          doc.setFontSize(10.5);
+          doc.setTextColor(55, 65, 81);
+
+          const splitText = doc.splitTextToSize(text, contentWidth);
+          doc.text(splitText, margin, currentY);
+          currentY += (splitText.length * 6) + 3;
+        }
+      });
+
+      console.log('✅ AI Interpretation rendered with professional formatting');
+
+      // Footer on all pages
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(156, 163, 175);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, 285, { align: 'center' });
+        doc.text('Confidential - LAS Analyzer AI Report', margin, 285);
+      }
+
+      const filename = `Well_Analysis_${interpretation.metadata?.wellName || 'Report'}_${new Date().getTime()}.pdf`;
+      doc.save(filename);
+      console.log(`🎉 PDF saved successfully: ${filename}`);
+
+    } catch (error) {
+      console.error('❌ PDF Generation Error:', error);
+      alert('Could not generate PDF: ' + error.message);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -220,6 +543,30 @@ const AIInterpretation = ({ wellId, curves, depthRange, data, onInterpretationCo
           </div>
         </div>
       )}
+
+      {/* Download Action */}
+      <div className="flex justify-center pt-8 border-t border-gray-100 mt-6">
+        <button
+          onClick={handleDownloadPDF}
+          disabled={isDownloading}
+          className={`flex items-center gap-3 px-10 py-5 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all duration-300 overflow-hidden ${isDownloading
+            ? 'bg-gray-400 cursor-wait'
+            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-200/50 hover:scale-[1.02] active:scale-95'
+            }`}
+        >
+          {isDownloading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Generating PDF...
+            </>
+          ) : (
+            <>
+              <Download className="w-5 h-5" />
+              Download Comprehensive Well Report
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 };
