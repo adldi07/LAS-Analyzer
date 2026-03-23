@@ -564,9 +564,9 @@ ${curves.map(curve => `
       if (featureFlags.isEnabled('mockAI')) {
         console.log('⚠️ MOCK MODE: Returning canned interpretation (mockAI=true)');
         const interpretation = `
-# 🧪 MOCK INTERPRETATION (Cost-Saving Mode)
+# 🤖 Public Showcase Mode
 
-**Note:** This is a generated response for testing purposes. Toggle \`mockAI\` to \`false\` in \`backend/config/features.json\` to enable real AI analysis.
+> ℹ️ **Notice:** Live AI generation is currently disabled for this public demonstration to manage traffic and API constraints. You are viewing a representative, pre-generated interpretation showcasing our AI's capabilities.
 
 ## 1. Overall Assessment
 The analyzed interval (${depthRange.start}-${depthRange.stop} ft) represents a significant sequence of interest. The system has successfully segmented the log into distinct lithological zones, suggesting a changing depositional environment.
@@ -581,8 +581,6 @@ The automated quality control checks have identified ${qualityIssues && qualityI
 The interval has been divided into ${zones ? zones.length : 0} zones:
 ${zones && zones.length > 0 ? `- **Zone 1:** Shows characteristics of ${zones[0].characterization}.` : ''}
 ${zones && zones.length > 1 ? `- **Zone 2:** Transitions into a ${zones[1].characterization}.` : ''}
-
-*Edit \`backend/config/features.json\` and set \`mockAI: false\` to enable real Claude AI analysis.*
         `;
 
         return {
@@ -740,7 +738,7 @@ Be specific, reference actual depth values and measurements, and use professiona
       // Check feature flag for chat mock mode
       if (featureFlags.isEnabled('mockChat')) {
         console.log('⚠️ MOCK CHAT MODE: Returning canned response (mockChat=true)');
-        return "🧪 **Mock Chat Response**\n\nThis is a placeholder response for testing. The chatbot is currently in mock mode to save API costs.\n\nTo enable real AI chat analysis, edit `backend/config/features.json` and set `mockChat: false`.\n\n*Note: The well data context and conversation history are being tracked correctly, but the AI response is mocked.*";
+        return "🤖 **Public Showcase Mode**\n\n> ℹ️ **Notice:** The live AI chatbot is currently disabled for this public demonstration to manage traffic and API constraints.\n\nNormally, you could chat freely with the AI about this well's specific curves, zones, and fluid indicators. This is a pre-generated response to showcase the interface.";
       }
 
       // Real chat mode - call Claude API
