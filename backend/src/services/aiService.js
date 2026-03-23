@@ -568,6 +568,8 @@ ${curves.map(curve => `
 
 > ℹ️ **Notice:** Live AI generation is currently disabled for this public demonstration to manage traffic and API constraints. You are viewing a representative, pre-generated interpretation showcasing our AI's capabilities.
 
+*Note: This mock mode helps us save LLM API costs during public previews.*
+
 ## 1. Overall Assessment
 The analyzed interval (${depthRange.start}-${depthRange.stop} ft) represents a significant sequence of interest. The system has successfully segmented the log into distinct lithological zones, suggesting a changing depositional environment.
 
@@ -738,7 +740,7 @@ Be specific, reference actual depth values and measurements, and use professiona
       // Check feature flag for chat mock mode
       if (featureFlags.isEnabled('mockChat')) {
         console.log('⚠️ MOCK CHAT MODE: Returning canned response (mockChat=true)');
-        return "🤖 **Public Showcase Mode**\n\n> ℹ️ **Notice:** The live AI chatbot is currently disabled for this public demonstration to manage traffic and API constraints.\n\nNormally, you could chat freely with the AI about this well's specific curves, zones, and fluid indicators. This is a pre-generated response to showcase the interface.";
+        return "🤖 **Public Showcase Mode**\n\n> ℹ️ **Notice:** The live AI chatbot is currently disabled for this public demonstration to manage traffic and API constraints.\n\n*Note: This mock mode helps us save LLM API costs during public previews.*\n\nNormally, you could chat freely with the AI about this well's specific curves, zones, and fluid indicators. This is a pre-generated response to showcase the interface.";
       }
 
       // Real chat mode - call Claude API
