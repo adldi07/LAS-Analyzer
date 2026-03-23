@@ -1,4 +1,4 @@
 {
-    "mockAI": false,
-    "mockChat": false
+    "mockAI": true ,
+    "mockChat": true
 }
